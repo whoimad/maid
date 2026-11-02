@@ -18,5 +18,5 @@ def test_graph_pauses_at_human_review_then_finishes():
     cfg = {"configurable": {"thread_id": "t1"}}
     result = graph.invoke({"companies": ["Company A"]}, cfg)
     assert "__interrupt__" in result
-    final = graph.invoke(Command(resume="ok"), cfg)
+    final = graph.invoke(Command(resume={"overrides": []}), cfg)
     assert "report" in final

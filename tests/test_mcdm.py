@@ -54,3 +54,34 @@ def test_dominant_alternative_ranks_first():
     X = np.array([[9, 9, 9], [5, 5, 5], [1, 1, 1]], dtype=float)
     w = np.full(3, 1 / 3)
     assert topsis(X, w).argmax() == 0 and saw(X, w).argmax() == 0
+
+
+def test_single_alternative_is_rejected():
+    for fn in (entropy_weights, critic_weights):
+        with pytest.raises(ValueError):
+            fn(np.ones((1, 3)))
+
+
+def test_nan_in_matrix_is_rejected():
+    X = np.array([[1.0, 2.0], [np.nan, 3.0], [4.0, 5.0]])
+    with pytest.raises(ValueError):
+        entropy_weights(X)
+
+
+def test_one_dimensional_matrix_is_rejected():
+    with pytest.raises(ValueError):
+        critic_weights(np.arange(5.0))
+
+
+def test_rankers_reject_bad_weights():
+    X = np.random.default_rng(1).random((3, 3))
+    for fn in (saw, topsis):
+        for w in (np.full(2, 0.5), np.array([1.5, -0.25, -0.25]), np.full(3, 0.5)):
+            with pytest.raises(ValueError):
+                fn(X, w)
+
+
+def test_all_constant_matrix_still_falls_back_to_equal_weights():
+    X = np.ones((4, 3))
+    for fn in (entropy_weights, critic_weights):
+        assert np.allclose(fn(X), np.full(3, 1 / 3))

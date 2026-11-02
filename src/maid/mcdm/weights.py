@@ -10,7 +10,15 @@ def _minmax(X: np.ndarray) -> np.ndarray:
     return (X - lo) / np.where(hi - lo < _EPS, 1.0, hi - lo)
 
 
+def _check_matrix(X: np.ndarray) -> None:
+    if X.ndim != 2 or X.shape[0] < 2 or X.shape[1] < 1:
+        raise ValueError(f"X must be 2-D with >= 2 alternatives and >= 1 criterion, got shape {X.shape}")
+    if not np.isfinite(X).all():
+        raise ValueError("X contains NaN or inf; impute or drop missing criteria before weighting")
+
+
 def equal_weights(X: np.ndarray) -> np.ndarray:
+    _check_matrix(X)
     m = X.shape[1]
     return np.full(m, 1.0 / m)
 
@@ -18,6 +26,7 @@ def equal_weights(X: np.ndarray) -> np.ndarray:
 def entropy_weights(X: np.ndarray, normalization: str = "minmax") -> np.ndarray:
     """Shannon-entropy weights: criteria whose values vary more across alternatives get more weight.
     normalization: "minmax" (default; sensitive to the sample min/max) or "sum" (textbook column-sum, positive data only)."""
+    _check_matrix(X)
     n = X.shape[0]
     if normalization == "minmax":
         P = _minmax(X) + _EPS  # shift to strictly positive so ln() is defined
@@ -35,6 +44,7 @@ def entropy_weights(X: np.ndarray, normalization: str = "minmax") -> np.ndarray:
 
 def critic_weights(X: np.ndarray) -> np.ndarray:
     """CRITIC: weight = contrast (std) x conflict (1 - correlation with other criteria)."""
+    _check_matrix(X)
     N = _minmax(X)
     std = N.std(axis=0, ddof=1)
     with np.errstate(invalid="ignore", divide="ignore"):
