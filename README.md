@@ -3,6 +3,8 @@
 LLM agents turn qualitative company information into scores; a deterministic MCDM engine
 computes weights and rankings. Exploratory prototype. See `docs/SCOPE.md` and `docs/research/`.
 
+New here? Follow [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
+
 ## Setup
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
