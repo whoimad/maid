@@ -5,6 +5,8 @@ computes weights and rankings. Exploratory prototype. See `docs/SCOPE.md` and `d
 
 New here? Follow [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
 
+Preparing to explain the project? Start with [docs/INTERVIEW.md](docs/INTERVIEW.md).
+
 ## Setup
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
