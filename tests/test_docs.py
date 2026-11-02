@@ -16,3 +16,13 @@ def test_relative_markdown_links_resolve():
             if not (md.parent / path).exists():
                 broken.append(f"{md.relative_to(ROOT)} -> {target}")
     assert broken == []
+
+
+def test_graph_doc_diagram_matches_code():
+    from maid.graph import build_graph
+
+    text = (ROOT / "docs/architecture/graph.md").read_text(encoding="utf-8")
+    marker = "<!-- current-graph: kept in sync with build_graph() by tests/test_docs.py -->"
+    block = text.split(marker, 1)[1].split("```mermaid", 1)[1].split("```", 1)[0]
+    doc_edges = set(re.findall(r"^\s*(\w+)\s*-->\s*(\w+)\s*;?\s*$", block, re.M))
+    assert doc_edges == {(e.source, e.target) for e in build_graph().get_graph().edges}
