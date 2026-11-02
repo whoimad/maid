@@ -22,8 +22,8 @@ honor its STOP conditions, and update your row when done.
 | [011](011-demo-pipeline-end-to-end.md) | Working prototype: `python -m maid.demo` runs the full graph on synthetic data with a stub scorer | P1 | L | 007 | DONE (branch `feat/demo-pipeline`, c1817eb; reviewed after 1 amendment: legacy graph tests now pass 2 companies, since real MCDM needs n >= 2) |
 | [012](012-streamlit-gui.md) | Streamlit GUI: pipeline, inputs, scores + overrides, weights, ranking, rank intervals | P1 | M | 011 | DONE (branch `feat/gui`, d7f6273; reviewed after 1 revision: integer rank axes, grouped weights chart, override UI test; all 7 tabs checked in headless Firefox) |
 | [013](013-walkthrough.md) | Walkthrough: guided tour of what to run, read and open | P1 | S | 007–009, 011, 012 | TODO |
-| [014](014-settings-validation-and-evidence-check.md) | Validate settings at ingest (fail before review); evidence check raises instead of `assert` | P1 | S | 011 | TODO |
-| [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | TODO |
+| [014](014-settings-validation-and-evidence-check.md) | Validate settings at ingest (fail before review); evidence check raises instead of `assert` | P1 | S | 011 | DONE (branch `fix/settings-validation`, 2918d86; reviewed; merged into `integration/prototype`) |
+| [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | DONE (branch `docs/status-after-demo`, 8aeb36f; reviewed; also fixed overview.md:151 graph.md blurb; merged into `integration/prototype`) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
