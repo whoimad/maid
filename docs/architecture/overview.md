@@ -4,6 +4,64 @@ Goal: rank companies on mixed quantitative and qualitative criteria **without le
 ranking decision**. Diagrams are Mermaid and render on GitHub. Per-block detail lives in the other
 files in this folder; the reasoning behind each choice is in [decisions.md](decisions.md).
 
+## Status: what is built today
+
+| Block | Code | Status |
+|---|---|---|
+| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` returns `{"quantitative": {}}` | stub |
+| Disk cache | `cache.py` `DiskCache` (sha256 keys; `llm_key(model, prompt_version, ...)`) | implemented, not yet used by any node |
+| Config | `config.py` `Settings`: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` (default `deepseek-flash`), `DECISION_DATE` (default 2024-12-31), `MAID_CACHE_DIR` (default `data/cache`) | implemented |
+| Qualitative scorer agents | `graph.py` `score_qualitative()` returns `{"qualitative": []}`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub (schema implemented) |
+| Human checkpoint | `graph.py` `human_review()` calls `interrupt(...)`; `parse_overrides()` validates the resume payload (`ScoreOverride`, reason mandatory, unknown company/criterion rejected) | implemented; overrides are validated but not yet applied to scores |
+| MCDM engine | `mcdm/weights.py`, `mcdm/ranking.py` (entropy, CRITIC, equal; TOPSIS, SAW) | library implemented; graph node `mcdm()` is a stub |
+| Robustness | `mcdm/robustness.py` (bootstrap + Dirichlet rank intervals) | library implemented; graph node `robustness()` is a stub |
+| Report | `graph.py` `report()` returns `{"report": ""}` | stub |
+| Backtest vs 2025 | none | planned |
+| Checkpointer | `build_graph()` compiles with `MemorySaver` (in-process memory) | implemented; does NOT survive a process restart |
+
+Diagrams in sections 2-4 show the target design; the table above is the source of truth for what runs today.
+
+### Diagram types used here
+- C4 model, level 1 (System context) and level 2 (Containers): what the system is and what it talks to.
+- Flowchart (data flow): how data moves through the pipeline.
+- Sequence diagram: the order of calls in the human-in-the-loop step.
+- Design decisions are written as lightweight ADRs (Architecture Decision Records) in `decisions.md`.
+
+## 0. System context and containers (C4)
+
+Level 1, system context:
+
+```mermaid
+flowchart LR
+    U([Analyst<br/>human reviewer]) -->|reviews/overrides scores, reads report| MAID[MAID]
+    MAID -->|10-K text, XBRL facts - planned| SEC[SEC EDGAR]
+    MAID -->|prices up to decision date - planned| YF[yfinance]
+    MAID -->|scoring prompts, anonymized - planned| DS[DeepSeek API]
+```
+
+MAID is one system with one human user. It reads public filings and prices and sends only anonymized
+prompts to the LLM provider. The external connections are planned; ingest and scoring are stubs today.
+
+Level 2, containers:
+
+```mermaid
+flowchart LR
+    U([Analyst]) -->|reviews/overrides, reads report| P
+    subgraph MAID
+      CFG[Config<br/>.env via config.py] --> P[LangGraph pipeline<br/>graph.py, state.py]
+      P -->|decision matrix X| M[MCDM engine<br/>mcdm/: pure functions]
+      P -->|all API calls| C[Disk cache<br/>cache.py, data/cache]
+      P -->|state at each step / interrupt| K[Checkpointer<br/>MemorySaver, in-memory]
+    end
+    C -->|planned| SEC[SEC EDGAR]
+    C -->|planned| YF[yfinance]
+    C -->|planned| DS[DeepSeek API]
+```
+
+The pipeline orchestrates the steps, hands the decision matrix to the pure-function MCDM engine, and
+routes every external call through the disk cache. The cache is not yet used by any node and the
+checkpointer does not survive a restart (see the status table).
+
 ## 1. The one idea to remember
 LLMs are good at reading text and bad at being auditable decision makers. MCDM methods are the opposite.
 So each does only what it is good at:
@@ -23,7 +81,7 @@ flowchart LR
     A[SEC EDGAR<br/>10-K text + XBRL] --> I[Ingest]
     B[yfinance<br/>prices] --> I
     I -->|ratios from XBRL| Q[Quantitative criteria]
-    I -->|filing text, names anonymized| S[Qualitative scorer agents<br/>one per criterion, K samples]
+    I -->|filing text, names anonymized| S[Qualitative scorer agents<br/>one per company x criterion, K samples (planned)]
     S --> H{{Human checkpoint<br/>review scores + evidence}}
     H --> M[MCDM engine<br/>weights + ranking]
     Q --> M
@@ -61,7 +119,7 @@ sequenceDiagram
     participant S as Scorer agents
     participant H as Human
     participant M as MCDM engine
-    G->>S: fan out (one per criterion)
+    G->>S: fan out per company x criterion (planned: Send)
     S-->>G: scores + evidence quotes
     G->>H: interrupt(scores) , state saved by checkpointer
     H-->>G: resume(overrides + reasons)
@@ -69,9 +127,11 @@ sequenceDiagram
     M-->>G: weights, ranking
 ```
 
-The interrupt sits after the join, not inside parallel branches, so the human reviews everything once
-and the checkpointer can resume across restarts. Overrides are logged with a reason; they can later be
-used to measure where the LLM disagrees with the human.
+The interrupt sits after the join, not inside parallel branches, so the human reviews everything once.
+Today the graph uses `MemorySaver`, which keeps checkpoints in process memory: a paused run survives
+within one Python process, but a restart loses it. Resuming across restarts needs a persistent
+checkpointer (e.g. SQLite) and is planned. Today the graph is linear (no fan-out yet). Overrides are
+validated with a mandatory reason; applying them to the scores is not built yet.
 
 ## 5. Evaluation
 
@@ -90,4 +150,4 @@ With about 12 companies the backtest is noisy; the project reports correlations 
 ## Blocks
 - [mcdm.md](mcdm.md): weights and ranking (implemented)
 - [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (library implemented, not yet wired into the graph)
-- Ingest, scorer agents, human checkpoint, robustness, report: documented as each is built
+- Ingest, scorer agents, human checkpoint, report: documented as each is built
