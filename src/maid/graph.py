@@ -5,13 +5,16 @@ from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
+from maid.config import get_settings
 from maid.demo_data import QUAL_CRITERIA, QUANT_CRITERIA, demo_dataset
 from maid.matrix import apply_overrides, build_matrix, kendall_tau
 from maid.mcdm import critic_weights, entropy_weights, equal_weights, robust_ranking, saw, topsis
+from maid.real_data import load_sec
 from maid.scoring import StubScorer, aggregate, evidence_is_quoted
 from maid.state import CHECKPOINT_TYPES, CriterionScore, PipelineState, ScoreOverride
+from maid.xbrl import TECH_CRITERIA
 
-DEFAULT_SETTINGS = {"k": 5, "weighting": "critic", "seed": 0, "n_draws": 500, "concentration": 100.0}
+DEFAULT_SETTINGS = {"source": "demo", "k": 5, "weighting": "critic", "seed": 0, "n_draws": 500, "concentration": 100.0}
 WEIGHT_FNS = {"entropy": entropy_weights, "critic": critic_weights, "equal": equal_weights}
 
 
@@ -22,6 +25,8 @@ def validate_settings(settings: dict) -> dict:
         raise ValueError(f"unknown settings: {sorted(extra)}")
     if merged["weighting"] not in WEIGHT_FNS:
         raise ValueError(f"unknown weighting: {merged['weighting']!r}")
+    if merged["source"] not in ("demo", "sec"):
+        raise ValueError(f"unknown source: {merged['source']!r}")
     for key, low in (("k", 1), ("seed", 0), ("n_draws", 1)):
         v = merged[key]
         if not isinstance(v, int) or isinstance(v, bool) or v < low:
@@ -37,20 +42,27 @@ def _settings(state: PipelineState) -> dict:
 
 
 def ingest(state: PipelineState) -> dict:
-    """Load the synthetic demo dataset (real SEC/yfinance ingest is planned)."""
+    """Load inputs: the synthetic demo dataset, or (source="sec") the frozen tech universe from SEC XBRL, quant only."""
     settings = _settings(state)
-    ds = demo_dataset(seed=settings["seed"])
-    companies = state.get("companies") or ds.companies
-    unknown = [c for c in companies if c not in ds.companies]
+    if settings["source"] == "sec":
+        tickers, quant, _ = load_sec(get_settings().decision_date)
+        available, filings, criteria = list(tickers), {c: "" for c in tickers}, list(TECH_CRITERIA)
+    else:
+        ds = demo_dataset(seed=settings["seed"])
+        tickers, quant, filings = {}, ds.quantitative, ds.filings
+        available, criteria = ds.companies, QUANT_CRITERIA + QUAL_CRITERIA
+    companies = state.get("companies") or available
+    unknown = [c for c in companies if c not in available]
     if unknown:
         raise ValueError(f"unknown companies: {unknown}")
     if len(set(companies)) != len(companies):
         raise ValueError(f"duplicate companies: {companies}")
     return {
         "companies": list(companies),
-        "quantitative": {c: ds.quantitative[c] for c in companies},
-        "filings": {c: ds.filings[c] for c in companies},
-        "criteria": QUANT_CRITERIA + QUAL_CRITERIA,
+        "quantitative": {c: quant[c] for c in companies},
+        "filings": {c: filings[c] for c in companies},
+        "tickers": {c: tickers[c] for c in companies if c in tickers},
+        "criteria": criteria,
         "settings": settings,
     }
 
@@ -58,6 +70,8 @@ def ingest(state: PipelineState) -> dict:
 def score_qualitative(state: PipelineState) -> dict:
     """Score each company and qualitative criterion with the stub scorer (K samples, median, evidence check)."""
     settings = _settings(state)
+    if settings["source"] == "sec":  # quant-only baseline (SCOPE section 6): no LLM scorer on real data yet
+        return {"qualitative": [], "score_samples": {}, "score_noise": {}}
     scorer = StubScorer(demo_dataset(seed=settings["seed"]).latent, seed=settings["seed"])
     qualitative, samples, noise = [], {}, {}
     for c in state["companies"]:
@@ -88,6 +102,8 @@ def parse_overrides(decision, qualitative: list[CriterionScore]) -> list[ScoreOv
 
 def human_review(state: PipelineState) -> dict:
     # Pauses the graph; resume with Command(resume={"overrides": [...]}).
+    if not state.get("qualitative"):
+        return {"overrides": []}
     decision = interrupt({"qualitative": state.get("qualitative", [])})
     return {"overrides": parse_overrides(decision, state.get("qualitative", []))}
 
@@ -142,10 +158,15 @@ def report(state: PipelineState) -> dict:
     top, sw = state["scores"]["topsis"], state["scores"]["saw"]
     bo, di, sn = rb["bootstrap"], rb["dirichlet"], rb["score_noise"]
     tau = state["method_agreement"]["kendall_tau_topsis_saw"]
+    sec, tickers = st["source"] == "sec", state.get("tickers") or {}
+    head = (["# MAID report: real data (tech, quantitative only)", "",
+             f"> **Real data**: SEC XBRL, point-in-time on the decision date {get_settings().decision_date}; "
+             "4 quantitative criteria, no LLM scores. Local only: do not commit.", ""] if sec else
+            ["# MAID demo report", "",
+             "> **Synthetic demo data**: invented companies, not real ones. Decision date 2025-03-31.", ""])
     lines = [
-        "# MAID demo report", "",
-        "> **Synthetic demo data**: invented companies, not real ones. Decision date 2025-03-31.", "",
-        f"Settings: weighting={st['weighting']}, k={st['k']}, seed={st['seed']}, "
+        *head,
+        f"Settings: source={st['source']}, weighting={st['weighting']}, k={st['k']}, seed={st['seed']}, "
         f"n_draws={st['n_draws']}, concentration={st['concentration']}", "",
         "## Ranking (by TOPSIS)", "",
         "| Rank | Company | TOPSIS | SAW | Bootstrap 90% rank | Dirichlet 90% rank | Score-noise 90% rank | P(rank 1) Dirichlet |",
@@ -153,15 +174,19 @@ def report(state: PipelineState) -> dict:
     ]
     for r, c in enumerate(state["ranking"], 1):
         i = cs.index(c)
-        lines.append(f"| {r} | {c} | {top[i]:.3f} | {sw[i]:.3f} | {bo['lo'][i]:.0f}-{bo['hi'][i]:.0f} | "
+        name = f"{c} ({tickers[c]})" if tickers else c
+        lines.append(f"| {r} | {name} | {top[i]:.3f} | {sw[i]:.3f} | {bo['lo'][i]:.0f}-{bo['hi'][i]:.0f} | "
                      f"{di['lo'][i]:.0f}-{di['hi'][i]:.0f} | {sn['lo'][i]:.0f}-{sn['hi'][i]:.0f} | {di['acceptability'][i][0]:.2f} |")
     lines += ["", "Score-noise intervals re-draw each LLM score from its K samples (median of a resample) and "
               "recompute weights; human-overridden scores are held fixed, and with k=1 the interval has zero width."]
+    if sec:
+        lines += ["", "No LLM scores in this run, so score-noise intervals have zero width."]
     lines += ["", "## Weights", "", "| Criterion | Weight |", "|---|---|"]
     lines += [f"| {k} | {v:.3f} |" for k, v in state["weights"].items()]
     lines += ["", f"Method agreement (Kendall tau, TOPSIS vs SAW): {tau:.3f}", "", "## Human overrides", ""]
     lines += [f"- {o.company} / {o.criterion} -> {o.score}: {o.reason}" for o in state.get("overrides", [])] or ["none"]
-    lines += ["", "LLMs never rank: scores come from the (stub) scorer, ranks from the MCDM engine.", ""]
+    lines += ["", "LLMs never rank: this run has no LLM scores; ranks come from the MCDM engine." if sec else
+              "LLMs never rank: scores come from the (stub) scorer, ranks from the MCDM engine.", ""]
     return {"report": "\n".join(lines)}
 
 

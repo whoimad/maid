@@ -8,7 +8,7 @@ files in this folder; the reasoning behind each choice is in [decisions.md](deci
 
 | Block | Code | Status |
 |---|---|---|
-| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` loads the `demo_data.py` synthetic dataset | demo implemented (synthetic dataset); real SEC/yfinance ingest planned; spec: [data.md](data.md) |
+| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` loads the `demo_data.py` synthetic dataset | demo implemented; real SEC tech ingest with source="sec" (quantitative only); prices/backtest planned; spec: [data.md](data.md) |
 | Disk cache | `cache.py` `DiskCache` (sha256 keys; `llm_key(model, prompt_version, ...)`) | implemented, not yet used by any node |
 | Config | `config.py` `Settings`: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` (default `deepseek-flash`), `DECISION_DATE` (default 2025-03-31), `MAID_CACHE_DIR` (default `data/cache`) | implemented |
 | Qualitative scorer agents | `graph.py` `score_qualitative()` uses `scoring.py` `StubScorer`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub scorer implemented (deterministic, K samples, evidence check); DeepSeek scorer planned |

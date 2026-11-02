@@ -29,9 +29,10 @@ class PipelineState(TypedDict, total=False):
     report: str
     criteria: list[str]  # column order of X
     filings: dict[str, str]
+    tickers: dict[str, str]  # label -> ticker for source="sec"; local only, never put into prompts
     score_samples: dict[str, list[int]]  # "company|criterion" -> K sampled scores
     score_noise: dict[str, float]  # "company|criterion" -> std of the K samples
-    settings: dict  # {"k", "weighting", "seed", "n_draws", "concentration"}
+    settings: dict  # {"source", "k", "weighting", "seed", "n_draws", "concentration"}
     matrix: list[list[float]]  # X after overrides
     scores: dict[str, list[float]]  # {"topsis": [...], "saw": [...]} in `companies` order
     method_agreement: dict[str, float]  # {"kendall_tau_topsis_saw": ...}
