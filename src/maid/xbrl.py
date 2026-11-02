@@ -27,9 +27,9 @@ def _annual(f) -> bool:
     return "start" in f and 350 <= _days(f["start"], f["end"]) <= 380
 
 
-def latest_10k(facts, decision_date) -> tuple[str, str, str]:
+def latest_10k(facts, decision_date, tags=REVENUE) -> tuple[str, str, str]:
     """(accn, filed, period_end) of the latest 10-K filed on or before decision_date."""
-    cands = [f for tag in REVENUE for f in _usd(facts, tag)
+    cands = [f for tag in tags for f in _usd(facts, tag)
              if f.get("form") == "10-K" and f["filed"] <= decision_date and _annual(f)]
     if not cands:
         raise ValueError(f"no 10-K revenue filed on or before {decision_date}: {facts.get('entityName')}")

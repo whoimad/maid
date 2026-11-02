@@ -29,6 +29,15 @@ pip install -e ".[gui]"
 streamlit run app/streamlit_app.py
 ```
 
+## Real data (local only)
+
+Needs `pip install -e ".[data]"` and `SEC_USER_AGENT` set in `.env` (SEC requires a contact in the User-Agent). Downloads stay in `data/cache/` and are never committed.
+
+```bash
+python scripts/select_universe.py tech --write
+python scripts/select_universe.py banks --write
+```
+
 ## Layout
 - `src/maid/graph.py`: LangGraph pipeline; runs the demo pipeline end to end (synthetic data, stub scorer), with a human-review interrupt
 - `src/maid/demo.py`: runs the graph and auto-resumes the review (`python -m maid.demo`)
@@ -42,6 +51,9 @@ streamlit run app/streamlit_app.py
 - `src/maid/config.py`: settings from environment
 - `src/maid/xbrl.py`: point-in-time XBRL extraction (pure)
 - `src/maid/sec.py`: cached SEC EDGAR client
+- `src/maid/universe.py`: universe selection rule (pure)
+- `src/maid/prices.py`: yfinance price layer (cached, local only)
+- `scripts/select_universe.py`: select the 15-company universe per sector
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
 - `docs/architecture/`: architecture overview, per-block docs, design decisions

@@ -57,3 +57,9 @@ def test_missing_tag_raises():
 def test_no_10k_before_date():
     with pytest.raises(ValueError):
         latest_10k(F, "2020-01-01")
+
+
+def test_latest_10k_custom_tags():
+    assert latest_10k(F, "2025-03-31", REV) == ("A-2025", "2025-02-10", "2024-12-31")
+    with pytest.raises(ValueError):
+        latest_10k(F, "2025-03-31", ["NoSuchTag"])

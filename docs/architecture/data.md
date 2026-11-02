@@ -1,6 +1,6 @@
 # Real data: sources, time rule, universe, criteria
 
-This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`); not wired into the graph yet.
+This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`), universe selection (`universe.py`, `scripts/select_universe.py`) and the price layer (`prices.py`) implemented; not wired into the graph yet.
 
 ## Sources
 
@@ -44,6 +44,10 @@ This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py
 - Ranking: market cap on the decision date = shares outstanding (XBRL `dei:EntityCommonStockSharesOutstanding`, summed over share classes, from the latest filing filed on or before the decision date) x closing price on the decision date (yfinance, split-corrected). Multi-class companies use one class's price: an approximation.
 - The list is frozen and committed at `data/universe/<sector>.csv`. It is the only committed file under `data/`.
 - Known limitation (kept from SCOPE section 4): selecting the largest names adds mild survivorship and winner bias.
+
+### Frozen universes
+
+Not yet selected: run `python scripts/select_universe.py tech --write` and `... banks --write` with SEC_USER_AGENT set.
 
 ## Quantitative criteria (tech)
 
