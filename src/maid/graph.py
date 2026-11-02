@@ -15,8 +15,25 @@ DEFAULT_SETTINGS = {"k": 5, "weighting": "critic", "seed": 0, "n_draws": 500, "c
 WEIGHT_FNS = {"entropy": entropy_weights, "critic": critic_weights, "equal": equal_weights}
 
 
+def validate_settings(settings: dict) -> dict:
+    """Merge with defaults and reject unknown keys or out-of-range values (ValueError)."""
+    merged = {**DEFAULT_SETTINGS, **settings}
+    if extra := set(merged) - set(DEFAULT_SETTINGS):
+        raise ValueError(f"unknown settings: {sorted(extra)}")
+    if merged["weighting"] not in WEIGHT_FNS:
+        raise ValueError(f"unknown weighting: {merged['weighting']!r}")
+    for key, low in (("k", 1), ("seed", 0), ("n_draws", 1)):
+        v = merged[key]
+        if not isinstance(v, int) or isinstance(v, bool) or v < low:
+            raise ValueError(f"{key} must be an int >= {low}: {v!r}")
+    c = merged["concentration"]
+    if not isinstance(c, (int, float)) or isinstance(c, bool) or not np.isfinite(c) or c <= 0:
+        raise ValueError(f"concentration must be a finite number > 0: {c!r}")
+    return merged
+
+
 def _settings(state: PipelineState) -> dict:
-    return {**DEFAULT_SETTINGS, **state.get("settings", {})}
+    return validate_settings(state.get("settings", {}))
 
 
 def ingest(state: PipelineState) -> dict:
@@ -27,6 +44,8 @@ def ingest(state: PipelineState) -> dict:
     unknown = [c for c in companies if c not in ds.companies]
     if unknown:
         raise ValueError(f"unknown companies: {unknown}")
+    if len(set(companies)) != len(companies):
+        raise ValueError(f"duplicate companies: {companies}")
     return {
         "companies": list(companies),
         "quantitative": {c: ds.quantitative[c] for c in companies},
@@ -45,7 +64,8 @@ def score_qualitative(state: PipelineState) -> dict:
         for crit in QUAL_CRITERIA:
             drawn = scorer.score(c, crit, state["filings"][c], settings["k"])
             score, std = aggregate(drawn)
-            assert evidence_is_quoted(score, state["filings"][c]), f"evidence not in filing: {c}, {crit}"
+            if not evidence_is_quoted(score, state["filings"][c]):
+                raise ValueError(f"evidence not in filing: {c}, {crit}")
             qualitative.append(score)
             samples[f"{c}|{crit}"] = [s.score for s in drawn]
             noise[f"{c}|{crit}"] = std

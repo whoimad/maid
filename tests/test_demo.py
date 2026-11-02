@@ -5,6 +5,7 @@ import pytest
 from maid import scoring
 from maid.demo import run_demo
 from maid.demo_data import QUAL_CRITERIA, QUANT_CRITERIA, demo_dataset
+from maid.graph import DEFAULT_SETTINGS, build_graph, validate_settings
 from maid.matrix import apply_overrides, build_matrix
 from maid.scoring import StubScorer, aggregate, evidence_is_quoted
 from maid.state import CriterionScore, ScoreOverride
@@ -80,3 +81,30 @@ def test_weighting_choice_is_respected():
 
 def test_llm_never_ranks():
     assert [n for n in dir(scoring) if "rank" in n.lower()] == []
+
+
+def test_validate_settings_rejects_bad_values():
+    for bad in [{"weigthing": "equal"}, {"k": 0}, {"k": 2.5}, {"k": True}, {"n_draws": 0}, {"seed": -1},
+                {"concentration": 0}, {"concentration": float("inf")}, {"weighting": "nope"}]:
+        with pytest.raises(ValueError):
+            validate_settings(bad)
+    assert validate_settings({}) == DEFAULT_SETTINGS
+    assert validate_settings({"k": 3})["k"] == 3
+
+
+def test_bad_settings_fail_before_human_review():
+    graph, cfg = build_graph(), {"configurable": {"thread_id": "t"}}
+    with pytest.raises(ValueError):
+        graph.invoke({"settings": {"k": 0}}, cfg)
+    assert graph.get_state(cfg).values.get("qualitative") is None
+
+
+def test_duplicate_companies_rejected():
+    with pytest.raises(ValueError):
+        build_graph().invoke({"companies": ["Company A", "Company A"]}, {"configurable": {"thread_id": "d"}})
+
+
+def test_evidence_check_raises_not_asserts(monkeypatch):
+    monkeypatch.setattr("maid.graph.evidence_is_quoted", lambda s, f: False)
+    with pytest.raises(ValueError):
+        run_demo()
