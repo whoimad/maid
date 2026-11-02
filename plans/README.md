@@ -29,6 +29,7 @@ honor its STOP conditions, and update your row when done.
 | [018](018-real-data-spec-and-decision-date.md) | Real-data spec (`data.md`, D17); decision date 2025-03-31; `.gitignore` keeps data local | P1 | M | — | DONE (branch `docs/real-data-spec`, 383ad20; reviewed after 1 revision: D14 and overview stale dates; merged into `integration/prototype`) |
 | [019](019-sec-xbrl-quant-ingest.md) | SEC client + point-in-time XBRL tech criteria (cached, offline-tested) | P1 | M | 018 | DONE (branch `feat/sec-xbrl-ingest`, a110caf; reviewed; merged into `integration/prototype`; Step 6 real run NOT done: no `SEC_USER_AGENT`) |
 | [020](020-universe-and-prices.md) | yfinance price layer; select and freeze 15-name tech and bank universes | P1 | L | 018, 019 | DONE (code; branch `feat/universe-prices`, 72e067e; reviewed; merged into `integration/prototype`). Selection NOT run: needs `SEC_USER_AGENT` in the owner's `.env`; the CSVs come from the owner's first run |
+| [021](021-parallel-sec-downloads.md) | Parallel SEC downloads (8 workers, shared 8 req/s cap) + retry on transient errors | P1 | S | 020 | IN PROGRESS |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
