@@ -28,6 +28,8 @@ python scripts/weight_stability.py # spike #6 simulation
 - `src/maid/universe.py`: universe selection rule (pure)
 - `src/maid/prices.py`: yfinance price layer (cached, local only)
 - `src/maid/real_data.py`: frozen universe -> anonymized labels -> SEC criteria for the graph
+- `src/maid/backtest.py`: rank vs total return (Kendall/Spearman), quant-only baseline
+- `scripts/backtest.py`: run the backtest on the real tech universe (prints only)
 - `scripts/select_universe.py`: select the 15-company universe per sector
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
