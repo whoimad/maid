@@ -18,7 +18,7 @@
 - **Risk**: LOW
 - **Depends on**: plans 006, 007, 008, 009 merged; PR #13 merged
 - **Category**: docs
-- **Planned at**: commit `258af88`, 2026-11-02
+- **Planned at**: commit `258af88`, 2026-11-02; refreshed at `0ac52c6` (honest-status sentence now reflects the demo + GUI)
 
 ## Why this matters
 
@@ -30,7 +30,7 @@ summary of an existing doc, linked.
 
 Docs the sheet summarizes (read all of them before writing): `docs/SCOPE.md`, `docs/architecture/overview.md`,
 `graph.md`, `mcdm.md`, `robustness.md`, `uncertainty.md`, `decisions.md` (D1–D15),
-`docs/research/weight-stability-results.md`.
+`docs/research/weight-stability-results.md`, `docs/WALKTHROUGH.md` (plan 013), `README.md` (demo and GUI commands).
 
 ## Scope
 
@@ -61,8 +61,11 @@ Sections:
    engine weights and ranks: D1); the pipeline in one sentence (LangGraph: ingest → scorer agents → human review
    interrupt → MCDM → robustness → report); the noise problem (n≈12; spike #6 tau ≈ 0.62–0.89, synthetic) and the
    answer (rank intervals + method agreement); look-ahead control (decision date 2024-12-31, anonymized names,
-   known limitation that the model cutoff is unpublished); honest status (MCDM and robustness libraries and the
-   review interrupt are built and tested; ingest, scorers and report are stubs).
+   known limitation that the model cutoff is unpublished); honest status (the full graph runs end to end on a
+   synthetic demo dataset with a deterministic stub scorer: `python -m maid.demo` and the Streamlit GUI
+   `app/streamlit_app.py`; the MCDM engine, rank intervals, review interrupt and overrides are real and tested; real
+   SEC/yfinance ingest, the DeepSeek scorer, fan-out and the backtest are not built — check the status table in
+   `overview.md` before writing this).
 3. `## One picture` — copy the C4 level-2 (container) Mermaid diagram from `overview.md` verbatim.
 4. `## Likely questions` — `###` heading per question, answer ≤ 4 sentences, ending with a link to the source doc
    section. Questions, in order:
