@@ -1,8 +1,9 @@
 """Tiny on-disk JSON cache keyed by a hash, so API/data calls are never paid for twice."""
 import hashlib
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 
 class DiskCache:
