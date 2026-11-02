@@ -82,6 +82,7 @@ Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NP
 - The risk-adjusted measure (SCOPE section 5) is not defined yet and is deferred.
 - Look-ahead guard: only `src/maid/backtest.py` and `scripts/backtest.py` read post-decision prices. The graph never imports `maid.prices` (tested).
 - Run: `python scripts/backtest.py`. Output is printed only and stays local.
+- First result (2026-11-02): no association (primary Kendall tau +0.05, p = 0.85), with very low power at n = 15. See [backtest-quant-only-results.md](../research/backtest-quant-only-results.md).
 
 ## Local-only data
 
