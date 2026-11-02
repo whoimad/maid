@@ -89,4 +89,5 @@ With about 12 companies the backtest is noisy; the project reports correlations 
 
 ## Blocks
 - [mcdm.md](mcdm.md): weights and ranking (implemented)
+- [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (library implemented, not yet wired into the graph)
 - Ingest, scorer agents, human checkpoint, robustness, report: documented as each is built
