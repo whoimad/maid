@@ -26,6 +26,9 @@ honor its STOP conditions, and update your row when done.
 | [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | DONE (branch `docs/status-after-demo`, 8aeb36f; reviewed; also fixed overview.md:151 graph.md blurb; merged into `integration/prototype`) |
 | [016](016-doc-consistency-after-demo.md) | Docs consistent with the demo: robustness wired, overrides applied, full state keys, CLAUDE.md layout | P1 | S | 011–015 | DONE (same branch, c45ea81; reviewed) |
 | [017](017-score-noise-rank-intervals.md) | LLM score noise as a third rank interval (`score_noise`): engine, graph, report, GUI, docs, D16 | P1 | M | 005, 011, 012 | DONE (branch `feat/score-noise-intervals`, 57de3ee; reviewed after 1 revision: INTERVIEW Q7 wording; widths match the scratch prototype: 0 at k=1, mean 1.6 at k=5) |
+| [018](018-real-data-spec-and-decision-date.md) | Real-data spec (`data.md`, D17); decision date 2025-03-31; `.gitignore` keeps data local | P1 | M | — | TODO |
+| [019](019-sec-xbrl-quant-ingest.md) | SEC client + point-in-time XBRL tech criteria (cached, offline-tested) | P1 | M | 018 | TODO |
+| [020](020-universe-and-prices.md) | yfinance price layer; select and freeze 15-name tech and bank universes | P1 | L | 018, 019 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -67,6 +70,18 @@ decided in the plan (recorded as D16): bootstrap the median of each cell's K sam
 hold human overrides fixed, report as a separate third source drawn after bootstrap/Dirichlet so their results stay
 bit-identical. Rejected: one sample per cell (overstates the noise of a median of K); normal around the median
 (assumes a shape, needs rounding/clipping). Scratch prototype: mean interval width 0 at k=1, 1.6 at k=5.
+
+### Batch 6 (018–020): real data (2026-11-02, at `66b0316`)
+
+Owner asked whether real data can start now. Verdict: yes for ingest. The engine, robustness and cache don't care
+where numbers come from; the LLM scorer is still a stub and the real DeepSeek scorer comes after 10-K text work.
+Owner decisions: decision date moved to **2025-03-31** (on 2024-12-31 December year-end companies had not filed their
+FY2024 10-K; evaluation window becomes 2025-04-01 to 2026-03-31); **15 companies per sector**; fiscal year ends derived
+from data, never hard-coded; downloaded data stays local (gitignored), only `data/universe/*.csv` is committed.
+Order: 018 → 019 → 020 (strict). Not yet planned: wiring `source="sec"` into `ingest()` with anonymized labels;
+backtest; bank criteria spike (CET1/NPL not reliably in us-gaap XBRL); 10-K text extraction + anonymization +
+whitespace-normalized evidence check; real DeepSeek scorer.
+Assumption to confirm with the owner: sectors by SIC code (puts Alphabet/Meta in tech, not Amazon/Visa; GS/MS not banks).
 
 ## Findings considered and rejected
 
