@@ -151,4 +151,5 @@ With about 12 companies the backtest is noisy; the project reports correlations 
 - [graph.md](graph.md): LangGraph pipeline, state, interrupt/resume (skeleton implemented, nodes mostly stubs)
 - [mcdm.md](mcdm.md): weights and ranking (implemented)
 - [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (library implemented, not yet wired into the graph)
+- [uncertainty.md](uncertainty.md): every noise source, how it is measured, what is built
 - Ingest, scorer agents, human checkpoint, report: documented as each is built
