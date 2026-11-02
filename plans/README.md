@@ -26,7 +26,7 @@ honor its STOP conditions, and update your row when done.
 | [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | DONE (branch `docs/status-after-demo`, 8aeb36f; reviewed; also fixed overview.md:151 graph.md blurb; merged into `integration/prototype`) |
 | [016](016-doc-consistency-after-demo.md) | Docs consistent with the demo: robustness wired, overrides applied, full state keys, CLAUDE.md layout | P1 | S | 011–015 | DONE (same branch, c45ea81; reviewed) |
 | [017](017-score-noise-rank-intervals.md) | LLM score noise as a third rank interval (`score_noise`): engine, graph, report, GUI, docs, D16 | P1 | M | 005, 011, 012 | DONE (branch `feat/score-noise-intervals`, 57de3ee; reviewed after 1 revision: INTERVIEW Q7 wording; widths match the scratch prototype: 0 at k=1, mean 1.6 at k=5) |
-| [018](018-real-data-spec-and-decision-date.md) | Real-data spec (`data.md`, D17); decision date 2025-03-31; `.gitignore` keeps data local | P1 | M | — | TODO |
+| [018](018-real-data-spec-and-decision-date.md) | Real-data spec (`data.md`, D17); decision date 2025-03-31; `.gitignore` keeps data local | P1 | M | — | DONE (branch `docs/real-data-spec`, 383ad20; reviewed after 1 revision: D14 and overview stale dates; merged into `integration/prototype`) |
 | [019](019-sec-xbrl-quant-ingest.md) | SEC client + point-in-time XBRL tech criteria (cached, offline-tested) | P1 | M | 018 | TODO |
 | [020](020-universe-and-prices.md) | yfinance price layer; select and freeze 15-name tech and bank universes | P1 | L | 018, 019 | TODO |
 
