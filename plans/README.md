@@ -25,7 +25,7 @@ honor its STOP conditions, and update your row when done.
 | [014](014-settings-validation-and-evidence-check.md) | Validate settings at ingest (fail before review); evidence check raises instead of `assert` | P1 | S | 011 | DONE (branch `fix/settings-validation`, 2918d86; reviewed; merged into `integration/prototype`) |
 | [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | DONE (branch `docs/status-after-demo`, 8aeb36f; reviewed; also fixed overview.md:151 graph.md blurb; merged into `integration/prototype`) |
 | [016](016-doc-consistency-after-demo.md) | Docs consistent with the demo: robustness wired, overrides applied, full state keys, CLAUDE.md layout | P1 | S | 011–015 | DONE (same branch, c45ea81; reviewed) |
-| [017](017-score-noise-rank-intervals.md) | LLM score noise as a third rank interval (`score_noise`): engine, graph, report, GUI, docs, D16 | P1 | M | 005, 011, 012 | TODO |
+| [017](017-score-noise-rank-intervals.md) | LLM score noise as a third rank interval (`score_noise`): engine, graph, report, GUI, docs, D16 | P1 | M | 005, 011, 012 | DONE (branch `feat/score-noise-intervals`, 57de3ee; reviewed after 1 revision: INTERVIEW Q7 wording; widths match the scratch prototype: 0 at k=1, mean 1.6 at k=5) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
