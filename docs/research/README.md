@@ -1,0 +1,11 @@
+# Research notes
+
+Desk research produced by AI subagents on 2026-11-02.
+
+**Caveat: the agents read abstracts, search summaries and documentation pages, not the full papers.**
+Claims are only as reliable as those snippets. Items marked UNVERIFIED have no checked source.
+Before relying on a claim in the final write-up, read the original source and verify it.
+
+- `mcdm-noise.md`: stability of weighting and ranking methods at small n (issue #6)
+- `model-cutoff.md`: DeepSeek models, pricing, knowledge cutoffs (issue #2)
+- `llm-agents-finance.md`: prior work, look-ahead bias, LLM scoring practice, LangGraph patterns
