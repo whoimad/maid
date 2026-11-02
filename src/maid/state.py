@@ -27,6 +27,15 @@ class PipelineState(TypedDict, total=False):
     weights: dict[str, float]
     ranking: list[str]
     report: str
+    criteria: list[str]  # column order of X
+    filings: dict[str, str]
+    score_samples: dict[str, list[int]]  # "company|criterion" -> K sampled scores
+    score_noise: dict[str, float]  # "company|criterion" -> std of the K samples
+    settings: dict  # {"k", "weighting", "seed", "n_draws", "concentration"}
+    matrix: list[list[float]]  # X after overrides
+    scores: dict[str, list[float]]  # {"topsis": [...], "saw": [...]} in `companies` order
+    method_agreement: dict[str, float]  # {"kendall_tau_topsis_saw": ...}
+    robustness: dict  # {"bootstrap": {...}, "dirichlet": {...}} with lists
 
 
 # Pydantic types stored in graph state; checkpoints must be allowed to restore them.

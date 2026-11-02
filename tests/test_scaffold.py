@@ -16,7 +16,7 @@ def test_cache_computes_once(tmp_path):
 def test_graph_pauses_at_human_review_then_finishes():
     graph = build_graph()
     cfg = {"configurable": {"thread_id": "t1"}}
-    result = graph.invoke({"companies": ["Company A"]}, cfg)
+    result = graph.invoke({"companies": ["Company A", "Company B"]}, cfg)
     assert "__interrupt__" in result
     final = graph.invoke(Command(resume={"overrides": []}), cfg)
     assert "report" in final
