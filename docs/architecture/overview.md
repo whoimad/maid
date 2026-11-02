@@ -8,14 +8,14 @@ files in this folder; the reasoning behind each choice is in [decisions.md](deci
 
 | Block | Code | Status |
 |---|---|---|
-| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` returns `{"quantitative": {}}` | stub |
+| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` loads the `demo_data.py` synthetic dataset | demo implemented (synthetic dataset); real SEC/yfinance ingest planned |
 | Disk cache | `cache.py` `DiskCache` (sha256 keys; `llm_key(model, prompt_version, ...)`) | implemented, not yet used by any node |
 | Config | `config.py` `Settings`: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` (default `deepseek-flash`), `DECISION_DATE` (default 2024-12-31), `MAID_CACHE_DIR` (default `data/cache`) | implemented |
-| Qualitative scorer agents | `graph.py` `score_qualitative()` returns `{"qualitative": []}`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub (schema implemented) |
-| Human checkpoint | `graph.py` `human_review()` calls `interrupt(...)`; `parse_overrides()` validates the resume payload (`ScoreOverride`, reason mandatory, unknown company/criterion rejected) | implemented; overrides are validated but not yet applied to scores |
-| MCDM engine | `mcdm/weights.py`, `mcdm/ranking.py` (entropy, CRITIC, equal; TOPSIS, SAW) | library implemented; graph node `mcdm()` is a stub |
-| Robustness | `mcdm/robustness.py` (bootstrap + Dirichlet rank intervals) | library implemented; graph node `robustness()` is a stub |
-| Report | `graph.py` `report()` returns `{"report": ""}` | stub |
+| Qualitative scorer agents | `graph.py` `score_qualitative()` uses `scoring.py` `StubScorer`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub scorer implemented (deterministic, K samples, evidence check); DeepSeek scorer planned |
+| Human checkpoint | `graph.py` `human_review()` calls `interrupt(...)`; `parse_overrides()` validates the resume payload (`ScoreOverride`, reason mandatory, unknown company/criterion rejected) | implemented; overrides applied in `mcdm` |
+| MCDM engine | `mcdm/weights.py`, `mcdm/ranking.py` (entropy, CRITIC, equal; TOPSIS, SAW) | implemented and wired (node `mcdm`) |
+| Robustness | `mcdm/robustness.py` (bootstrap + Dirichlet rank intervals) | implemented and wired |
+| Report | `graph.py` `report()` builds a Markdown report from state | implemented (Markdown) |
 | Backtest vs 2025 | none | planned |
 | Checkpointer | `build_graph()` compiles with `MemorySaver` (in-process memory) | implemented; does NOT survive a process restart |
 

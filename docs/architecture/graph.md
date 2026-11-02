@@ -17,18 +17,18 @@ flowchart LR
     report --> __end__
 ```
 
-Linear; every node except `human_review` is a stub today (see the status table in [overview.md](overview.md)).
+Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer (see the status table in [overview.md](overview.md)).
 
 ## Nodes and state
 
 | Node | Reads | Writes | Status |
 |---|---|---|---|
-| `ingest` | `companies` | `quantitative` (empty dict) | stub |
-| `score_qualitative` | `companies` | `qualitative` (empty list) | stub |
+| `ingest` | `companies`, `settings` | `companies`, `quantitative`, `filings`, `criteria`, `settings` | demo implemented (synthetic dataset); real ingest planned |
+| `score_qualitative` | `companies`, `filings`, `settings` | `qualitative`, `score_samples`, `score_noise` | stub scorer implemented; DeepSeek scorer planned |
 | `human_review` | `qualitative` | `overrides` | implemented (pauses, validates overrides) |
-| `mcdm` | (nothing yet) | `weights`, `ranking` (empty) | stub |
-| `robustness` | (nothing yet) | nothing | stub |
-| `report` | (nothing yet) | `report` (empty string) | stub |
+| `mcdm` | `qualitative`, `overrides`, `quantitative`, `criteria`, `settings` | `matrix`, `weights`, `scores`, `ranking`, `method_agreement` | implemented; overrides applied here |
+| `robustness` | `matrix`, `settings` | `robustness` | implemented |
+| `report` | state | `report` (Markdown) | implemented |
 
 `PipelineState` keys (no key has a reducer, so each write replaces the key's value):
 
@@ -127,6 +127,6 @@ interrupt, the checkpointing and the planned fan-out.
 ## Known limitations
 
 - `MemorySaver` only: a restart loses a paused run.
-- Overrides are validated but not applied to scores yet.
-- No fan-out: scoring is a single stub node.
-- All nodes except `human_review` are stubs.
+- No fan-out: scoring is a single node.
+- Ingest and the scorer run on synthetic data (no real filings, no LLM).
+- The MCDM engine needs at least 2 companies.

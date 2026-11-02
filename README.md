@@ -12,6 +12,13 @@ pytest
 ruff check .
 ```
 
+## Run the demo
+Runs the whole pipeline on a synthetic dataset with a stub scorer (no network, no API key):
+```bash
+python -m maid.demo
+python -m maid.demo --weighting entropy --json out.json
+```
+
 ## Layout
 - `src/maid/graph.py`: LangGraph pipeline skeleton (stub nodes, human-review interrupt)
 - `src/maid/state.py`: shared state and score schema
