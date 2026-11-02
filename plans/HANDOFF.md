@@ -52,7 +52,8 @@ Real runs (with the owner's `.env`):
 **Update (same day):** items 1, 2 and 4 are done (D18). Owner said "keep it as simple as possible": `operating_margin`
 became `net_margin` (`NetIncomeLoss`, the only income tag all 15 report). data.md frozen tables filled. `fetch_sec.py`
 on all 15 tech tickers: 15 OK. Plan 023 (DONE, merged `b998797`): `python -m maid.demo --source sec` ranks the
-real tech universe, quant only (108 tests). Next: backtest.
+real tech universe, quant only. Plan 024 (DONE, `08a58f2`): `python scripts/backtest.py`, primary
+CRITIC + Kendall tau fixed before the result (result kept local). 115 tests. Next: 10-K text, then DeepSeek scorer.
 
 1. **IBM has no `OperatingIncomeLoss` in XBRL.** `tech_criteria` raises for IBM, so the `operating_margin` cell is
    missing. **This is an owner decision**: use a different income measure for everyone, a per-company fallback
