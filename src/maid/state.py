@@ -11,10 +11,23 @@ class CriterionScore(BaseModel):
     evidence: str  # quote that must appear in the source filing
 
 
+class ScoreOverride(BaseModel):
+    """A human correction of one LLM score; the reason is mandatory so disagreements can be analyzed later."""
+    company: str
+    criterion: str
+    score: int = Field(ge=1, le=9)
+    reason: str = Field(min_length=1)
+
+
 class PipelineState(TypedDict, total=False):
     companies: list[str]
     quantitative: dict[str, dict[str, float]]  # company -> criterion -> value
     qualitative: list[CriterionScore]
+    overrides: list[ScoreOverride]
     weights: dict[str, float]
     ranking: list[str]
     report: str
+
+
+# Pydantic types stored in graph state; checkpoints must be allowed to restore them.
+CHECKPOINT_TYPES = [("maid.state", "CriterionScore"), ("maid.state", "ScoreOverride")]
