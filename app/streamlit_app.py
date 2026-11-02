@@ -4,6 +4,7 @@ import json
 import altair as alt
 import pandas as pd
 import streamlit as st
+from pydantic import ValidationError
 
 from maid.demo import run_demo
 from maid.graph import DEFAULT_SETTINGS
@@ -16,6 +17,7 @@ from maid.gui_data import (
     score_rows,
     weight_rows,
 )
+from maid.state import ScoreOverride
 
 st.set_page_config(page_title="MAID demo", layout="wide")
 
@@ -57,6 +59,9 @@ try:
     state = as_state(run(json.dumps(settings), json.dumps(overrides)))
 except Exception as e:  # invalid overrides surface from the pipeline's validation
     st.error(f"Pipeline error: {e}")
+    if st.button("Clear overrides and retry"):
+        overrides.clear()
+        st.rerun()
     st.stop()
 
 tabs = st.tabs(["Pipeline", "Inputs", "Scores & review", "Weights", "Ranking", "Robustness", "Report"])
@@ -88,8 +93,14 @@ with tabs[2]:
         o_score = c3.slider("New score", 1, 9, 5)
         o_reason = st.text_input("Reason (required)")
         if st.form_submit_button("Add override"):
-            overrides.append({"company": o_company, "criterion": o_crit, "score": o_score, "reason": o_reason})
-            st.rerun()
+            candidate = {"company": o_company, "criterion": o_crit, "score": o_score, "reason": o_reason}
+            try:
+                ScoreOverride.model_validate(candidate)
+            except ValidationError:
+                st.error("Override rejected: a reason is required and the score must be 1-9.")
+            else:
+                overrides.append(candidate)
+                st.rerun()
     st.subheader("Active overrides")
     if overrides:
         st.dataframe(pd.DataFrame(overrides), hide_index=True)
