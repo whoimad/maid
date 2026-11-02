@@ -1,8 +1,12 @@
 """SEC client: caching, User-Agent guard, ticker lookup (no network)."""
+import threading
+import time
+import urllib.error
 import urllib.request
 
 import pytest
 
+from maid import sec
 from maid.cache import DiskCache
 from maid.sec import SecClient, _get_json, ticker_to_cik
 
@@ -39,3 +43,60 @@ def test_ticker_to_cik():
     assert ticker_to_cik(tj, "aapl") == 320193
     with pytest.raises(ValueError):
         ticker_to_cik(tj, "ZZZZ")
+
+
+class _Resp:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return b'{"ok": 1}'
+
+
+def test_rate_limit_shared_across_threads(no_network, monkeypatch):
+    monkeypatch.setattr(sec, "MIN_INTERVAL", 0.02)
+    sec._next[0] = 0.0
+    starts, out = [], []
+
+    def fake(req, timeout=0):
+        starts.append(time.monotonic())
+        return _Resp()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    ts = [threading.Thread(target=lambda: [out.append(_get_json("http://x", "t t@e.com")) for _ in range(2)]) for _ in range(5)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert out == [{"ok": 1}] * 10
+    starts.sort()
+    assert all(b - a >= 0.018 for a, b in zip(starts, starts[1:], strict=False))
+
+
+def test_retry_then_success(no_network, monkeypatch):
+    calls = []
+
+    def fake(req, timeout=0):
+        calls.append(1)
+        if len(calls) == 1:
+            raise urllib.error.URLError("dns")
+        return _Resp()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    assert _get_json("http://x", "t t@e.com") == {"ok": 1}
+    assert len(calls) == 2
+
+
+def test_404_not_retried(no_network, monkeypatch):
+    calls = []
+
+    def fake(req, timeout=0):
+        calls.append(1)
+        raise urllib.error.HTTPError("http://x", 404, "nf", None, None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    with pytest.raises(urllib.error.HTTPError):
+        _get_json("http://x", "t t@e.com")
+    assert len(calls) == 1
