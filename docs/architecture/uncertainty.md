@@ -37,7 +37,7 @@ flowchart LR
 
 | Source | What it is | Where | How measured / reduced | Status | Source doc |
 |---|---|---|---|---|---|
-| LLM sampling noise | Same prompt gives different scores at nonzero temperature | Scorer agents | Repeat K times, aggregate by median or mean, store variance; stability = score variance across K runs. K and the rule are open | demo: stub scorer draws K samples, median aggregate, std stored in score_noise; real LLM scorer planned; score noise not yet propagated into rank intervals | [SCOPE](../SCOPE.md) sections 5.3 and 6; [llm-agents-finance](../research/llm-agents-finance.md) section 4 (abstract-only) |
+| LLM sampling noise | Same prompt gives different scores at nonzero temperature | Scorer agents | Repeat K times, aggregate by median or mean, store variance; stability = score variance across K runs. K and the rule are open | demo: stub scorer draws K samples, median aggregate, std stored in score_noise; real LLM scorer planned; built: score-noise rank intervals in the robustness node (bootstrap of the median of K; overrides held fixed; D16) | [SCOPE](../SCOPE.md) sections 5.3 and 6; [llm-agents-finance](../research/llm-agents-finance.md) section 4 (abstract-only) |
 | LLM error / unsupported evidence | Score not backed by the filing | Scorer agents, human checkpoint | Every score carries a cited evidence quote; reject scores whose quote is not a substring of the filing text; human reviews and can override with a reason | demo: substring check on every score, human checkpoint, overrides applied with reason; real LLM scorer planned | [llm-agents-finance](../research/llm-agents-finance.md) section 4 (abstract-only); [overview](overview.md) |
 | Look-ahead leakage | The model may know post-2024-12-31 text; the DeepSeek cutoff is unpublished and likely later | Scorer agents | Decision date 2024-12-31 and anonymized company names; anonymization is necessary but insufficient; look-ahead probe (anonymized vs named prompts) | documented only (probe not built) | [SCOPE](../SCOPE.md) section 3; [decisions.md](decisions.md) D3; [llm-agents-finance](../research/llm-agents-finance.md) section 4 (abstract-only) |
 | Selection bias | Universe is the N largest by market cap: mild survivorship and winner bias | Ingest | Documented, not fixed | documented only | [SCOPE](../SCOPE.md) section 4 |
@@ -70,6 +70,7 @@ Also from the spike: SAW rankings were more stable than TOPSIS under the same we
 - Ranks in the middle are least reliable: the ranking method matters much less at the top and bottom than in the middle, where scores are tied within noise ([mcdm-noise.md](../research/mcdm-noise.md), abstract-only).
 - The bootstrap understates uncertainty with n around 12 because it only resamples companies already observed ([robustness.md](robustness.md)).
 - The Dirichlet spread is set by hand (`concentration` placeholder 100), so its width is not evidence by itself ([robustness.md](robustness.md)).
+- Score-noise intervals with small K understate the spread, and K=1 gives zero width ([robustness.md](robustness.md), D16).
 
 ## Open questions
 

@@ -35,7 +35,7 @@ class PipelineState(TypedDict, total=False):
     matrix: list[list[float]]  # X after overrides
     scores: dict[str, list[float]]  # {"topsis": [...], "saw": [...]} in `companies` order
     method_agreement: dict[str, float]  # {"kendall_tau_topsis_saw": ...}
-    robustness: dict  # {"bootstrap": {...}, "dirichlet": {...}} with lists
+    robustness: dict  # {"bootstrap": {...}, "dirichlet": {...}, "score_noise": {...}} with lists
 
 
 # Pydantic types stored in graph state; checkpoints must be allowed to restore them.

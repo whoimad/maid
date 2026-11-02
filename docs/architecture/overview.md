@@ -14,7 +14,7 @@ files in this folder; the reasoning behind each choice is in [decisions.md](deci
 | Qualitative scorer agents | `graph.py` `score_qualitative()` uses `scoring.py` `StubScorer`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub scorer implemented (deterministic, K samples, evidence check); DeepSeek scorer planned |
 | Human checkpoint | `graph.py` `human_review()` calls `interrupt(...)`; `parse_overrides()` validates the resume payload (`ScoreOverride`, reason mandatory, unknown company/criterion rejected) | implemented; overrides applied in `mcdm` |
 | MCDM engine | `mcdm/weights.py`, `mcdm/ranking.py` (entropy, CRITIC, equal; TOPSIS, SAW) | implemented and wired (node `mcdm`) |
-| Robustness | `mcdm/robustness.py` (bootstrap + Dirichlet rank intervals) | implemented and wired |
+| Robustness | `mcdm/robustness.py` (bootstrap, Dirichlet and score-noise rank intervals) | implemented and wired |
 | Report | `graph.py` `report()` builds a Markdown report from state | implemented (Markdown) |
 | Backtest vs 2025 | none | planned |
 | Checkpointer | `build_graph()` compiles with `MemorySaver` (in-process memory) | implemented; does NOT survive a process restart |

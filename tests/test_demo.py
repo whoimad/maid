@@ -108,3 +108,26 @@ def test_evidence_check_raises_not_asserts(monkeypatch):
     monkeypatch.setattr("maid.graph.evidence_is_quoted", lambda s, f: False)
     with pytest.raises(ValueError):
         run_demo()
+
+
+def test_score_noise_intervals_in_demo():
+    s = run_demo({"n_draws": 200})
+    r = s["robustness"]["score_noise"]
+    assert all(lo <= hi for lo, hi in zip(r["lo"], r["hi"], strict=True))
+    assert any(hi > lo for lo, hi in zip(r["lo"], r["hi"], strict=True))
+    assert "Score-noise 90% rank" in s["report"]
+
+
+def test_k1_score_noise_has_zero_width():
+    r = run_demo({"n_draws": 100, "k": 1})["robustness"]["score_noise"]
+    assert r["lo"] == r["point"] and r["hi"] == r["point"]
+
+
+def test_score_cells_skip_overrides():
+    from maid.graph import score_cells
+
+    s = run_demo({"n_draws": 50}, [{"company": "Company A", "criterion": "strategy_clarity", "score": 9, "reason": "r"}])
+    cells = score_cells(s)
+    assert len(cells) == 19
+    assert (0, s["criteria"].index("strategy_clarity")) not in cells
+    assert (0, s["criteria"].index("risk_disclosure")) in cells

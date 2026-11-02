@@ -83,3 +83,10 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Alternatives:** train a regressor/classifier from features to 2025 returns.
 - **Why:** ~12 companies per sector-year is not a training set; the research question is whether LLM-made scores give a stable, robust, informative MCDM ranking, not return prediction (SCOPE §1); trading advice is a non-goal (SCOPE §7).
 - **Cost:** no learned weighting; the backtest only checks association, and with n=12 only a strong one (|rho| > ~0.58) is distinguishable from chance.
+
+## D16. LLM score noise: bootstrap the median of the K samples, reported as a third rank interval
+- **Alternatives:** draw one of the K samples per cell; a normal around the median with the stored std; one simulation that mixes score and weight noise.
+- **Why:** the pipeline ranks the median of K, so the noise that matters is the sampling noise of that median; a with-replacement resample of the K samples, aggregated with the same half-up median, is the nonparametric bootstrap of exactly that statistic, stays on the 1-9 integer scale and needs no distribution assumption. Drawing one sample per cell would model a single-sample scorer and overstate the noise; a normal needs rounding and clipping and assumes a shape. Weights are recomputed on each draw because data-driven weights depend on the scores. Kept separate from D13's two sources so the report shows which kind of uncertainty drives an interval. SMAA also allows stochastic criterion values ([mcdm-noise.md](../research/mcdm-noise.md), abstract-only).
+- **Cost:** small K understates the spread and K=1 gives a zero-width interval (no information, not certainty); human-overridden cells are held fixed; quantitative criteria are treated as noise-free; cells are resampled independently.
+- **Status:** implemented and wired into the graph's `robustness` node (demo); K OPEN (D9).
+- **Revisit if:** real LLM samples turn out correlated across criteria of the same company (independent resampling would then understate the noise).

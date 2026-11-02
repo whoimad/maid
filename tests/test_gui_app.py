@@ -26,3 +26,10 @@ def test_empty_reason_is_rejected_and_app_stays_usable():
     assert at.session_state["overrides"] == []
     assert len(at.tabs) == 7
     assert any("Override rejected" in e.value for e in at.error)
+
+
+def test_score_noise_source_renders():
+    at = AppTest.from_file("../app/streamlit_app.py", default_timeout=60).run()
+    at.radio[0].set_value("score_noise").run()
+    assert not at.exception
+    assert any("LLM score noise" in c.value for c in at.caption)

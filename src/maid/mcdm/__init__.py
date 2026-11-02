@@ -1,5 +1,5 @@
 from maid.mcdm.ranking import saw, topsis
-from maid.mcdm.robustness import RankIntervals, rank_intervals, robust_ranking
+from maid.mcdm.robustness import RankIntervals, rank_intervals, robust_ranking, score_noise_intervals
 from maid.mcdm.weights import critic_weights, entropy_weights, equal_weights
 
 __all__ = [
@@ -10,5 +10,6 @@ __all__ = [
     "equal_weights",
     "robust_ranking",
     "rank_intervals",
+    "score_noise_intervals",
     "RankIntervals",
 ]

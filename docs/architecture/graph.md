@@ -27,7 +27,7 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 | `score_qualitative` | `companies`, `filings`, `settings` | `qualitative`, `score_samples`, `score_noise` | stub scorer implemented; DeepSeek scorer planned |
 | `human_review` | `qualitative` | `overrides` | implemented (pauses, validates overrides) |
 | `mcdm` | `qualitative`, `overrides`, `quantitative`, `criteria`, `settings` | `matrix`, `weights`, `scores`, `ranking`, `method_agreement` | implemented; overrides applied here |
-| `robustness` | `matrix`, `settings` | `robustness` | implemented |
+| `robustness` | `matrix`, `settings`, `score_samples`, `overrides`, `companies`, `criteria` | `robustness` | implemented |
 | `report` | state | `report` (Markdown) | implemented |
 
 `PipelineState` keys (no key has a reducer, so each write replaces the key's value):
@@ -47,7 +47,7 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 - `matrix`: X after overrides.
 - `scores`: TOPSIS and SAW scores per company, in `companies` order.
 - `method_agreement`: Kendall tau between TOPSIS and SAW.
-- `robustness`: bootstrap and Dirichlet rank intervals, as lists.
+- `robustness`: bootstrap, Dirichlet and score-noise rank intervals, as lists.
 
 Two Pydantic models are stored in state:
 

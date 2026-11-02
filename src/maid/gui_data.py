@@ -65,7 +65,7 @@ def ranking_rows(state) -> list[dict]:
 
 
 def interval_rows(state, source: str) -> list[dict]:
-    """Per company point rank, median and 90% interval for `source` (bootstrap or dirichlet), sorted by point."""
+    """Per company point rank, median and 90% interval for `source` (bootstrap, dirichlet or score_noise), sorted by point."""
     r = state["robustness"][source]
     rows = [{"company": c, "point": r["point"][i], "median": r["median"][i], "lo": r["lo"][i], "hi": r["hi"][i]}
             for i, c in enumerate(state["companies"])]

@@ -111,12 +111,25 @@ def mcdm(state: PipelineState) -> dict:
     }
 
 
+def score_cells(state: PipelineState) -> dict[tuple[int, int], list[int]]:
+    """K samples per LLM-scored cell of X, keyed (row, column); human-overridden cells are left out (held fixed)."""
+    over = {(o.company, o.criterion) for o in state.get("overrides", [])}
+    cs, cr = state["companies"], state["criteria"]
+    out = {}
+    for key, vals in state.get("score_samples", {}).items():
+        company, criterion = key.split("|", 1)
+        if (company, criterion) not in over:
+            out[(cs.index(company), cr.index(criterion))] = vals
+    return out
+
+
 def robustness(state: PipelineState) -> dict:
-    """Rank intervals under bootstrap and Dirichlet weight perturbation."""
+    """Rank intervals under bootstrap and Dirichlet weight perturbation, and under LLM score noise."""
     settings = _settings(state)
     res = robust_ranking(
         np.array(state["matrix"]), WEIGHT_FNS[settings["weighting"]], topsis,
         n_draws=settings["n_draws"], concentration=settings["concentration"], seed=settings["seed"],
+        cell_samples=score_cells(state),
     )
     fields = ("point", "median", "lo", "hi", "acceptability")
     return {"robustness": {src: {f: getattr(r, f).tolist() for f in fields} | {"n_draws": r.n_draws}
@@ -127,7 +140,7 @@ def report(state: PipelineState) -> dict:
     """Markdown report built from state only."""
     cs, st, rb = state["companies"], state["settings"], state["robustness"]
     top, sw = state["scores"]["topsis"], state["scores"]["saw"]
-    bo, di = rb["bootstrap"], rb["dirichlet"]
+    bo, di, sn = rb["bootstrap"], rb["dirichlet"], rb["score_noise"]
     tau = state["method_agreement"]["kendall_tau_topsis_saw"]
     lines = [
         "# MAID demo report", "",
@@ -135,13 +148,15 @@ def report(state: PipelineState) -> dict:
         f"Settings: weighting={st['weighting']}, k={st['k']}, seed={st['seed']}, "
         f"n_draws={st['n_draws']}, concentration={st['concentration']}", "",
         "## Ranking (by TOPSIS)", "",
-        "| Rank | Company | TOPSIS | SAW | Bootstrap 90% rank | Dirichlet 90% rank | P(rank 1) Dirichlet |",
-        "|---|---|---|---|---|---|---|",
+        "| Rank | Company | TOPSIS | SAW | Bootstrap 90% rank | Dirichlet 90% rank | Score-noise 90% rank | P(rank 1) Dirichlet |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r, c in enumerate(state["ranking"], 1):
         i = cs.index(c)
         lines.append(f"| {r} | {c} | {top[i]:.3f} | {sw[i]:.3f} | {bo['lo'][i]:.0f}-{bo['hi'][i]:.0f} | "
-                     f"{di['lo'][i]:.0f}-{di['hi'][i]:.0f} | {di['acceptability'][i][0]:.2f} |")
+                     f"{di['lo'][i]:.0f}-{di['hi'][i]:.0f} | {sn['lo'][i]:.0f}-{sn['hi'][i]:.0f} | {di['acceptability'][i][0]:.2f} |")
+    lines += ["", "Score-noise intervals re-draw each LLM score from its K samples (median of a resample) and "
+              "recompute weights; human-overridden scores are held fixed, and with k=1 the interval has zero width."]
     lines += ["", "## Weights", "", "| Criterion | Weight |", "|---|---|"]
     lines += [f"| {k} | {v:.3f} |" for k, v in state["weights"].items()]
     lines += ["", f"Method agreement (Kendall tau, TOPSIS vs SAW): {tau:.3f}", "", "## Human overrides", ""]

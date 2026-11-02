@@ -58,7 +58,7 @@ def test_ranking_rows(state):
 
 
 def test_interval_rows_sorted(state):
-    for src in ("bootstrap", "dirichlet"):
+    for src in ("bootstrap", "dirichlet", "score_noise"):
         rows = interval_rows(state, src)
         pts = [r["point"] for r in rows]
         assert pts == sorted(pts) and all(r["lo"] <= r["hi"] for r in rows)
@@ -69,3 +69,9 @@ def test_acceptability_rows(state):
     assert all(r["share"] > 0 for r in rows)
     assert abs(sum(r["share"] for r in rows if r["company"] == "Company A") - 1) < 1e-9
     assert np.isclose(sum(r["share"] for r in rows), 10)
+
+
+def test_acceptability_rows_score_noise(state):
+    rows = acceptability_rows(state, "score_noise")
+    assert rows
+    assert abs(sum(r["share"] for r in rows if r["company"] == "Company A") - 1) < 1e-9
