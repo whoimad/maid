@@ -30,7 +30,7 @@ honor its STOP conditions, and update your row when done.
 | [019](019-sec-xbrl-quant-ingest.md) | SEC client + point-in-time XBRL tech criteria (cached, offline-tested) | P1 | M | 018 | DONE (branch `feat/sec-xbrl-ingest`, a110caf; reviewed; merged into `integration/prototype`; Step 6 real run NOT done: no `SEC_USER_AGENT`) |
 | [020](020-universe-and-prices.md) | yfinance price layer; select and freeze 15-name tech and bank universes | P1 | L | 018, 019 | DONE (code; branch `feat/universe-prices`, 72e067e; reviewed; merged into `integration/prototype`). Selection NOT run: needs `SEC_USER_AGENT` in the owner's `.env`; the CSVs come from the owner's first run |
 | [021](021-parallel-sec-downloads.md) | Parallel SEC downloads (8 workers, shared 8 req/s cap) + retry on transient errors | P1 | S | 020 | DONE (branch `perf/parallel-sec`, befb30c; reviewed; merged) |
-| [022](022-universe-share-fallbacks-and-price-retry.md) | Fix universe: share-count fallbacks (Alphabet/Meta missing), Yahoo retries (NVIDIA dropped), Adobe R&D tag | P1 | S | 021 | IN PROGRESS |
+| [022](022-universe-share-fallbacks-and-price-retry.md) | Fix universe: share-count fallbacks (Alphabet/Meta missing), Yahoo retries (NVIDIA dropped), Adobe R&D tag | P1 | S | 021 | DONE (branch `fix/universe-shares`, d7ae7b3; reviewed; merged; real runs: tech and banks pass sanity checks, CSVs committed) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
