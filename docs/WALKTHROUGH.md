@@ -217,8 +217,8 @@ Check: where must the MCDM engine never do I/O or call an LLM? (CLAUDE.md rules;
 
 ## Stop 8 — Explaining it (10 min)
 
-There is no interview sheet in this checkout, so practise from [decisions.md](architecture/decisions.md): each
-decision is written with alternatives, why and cost so it can be defended. Interview sheet: [INTERVIEW.md](INTERVIEW.md).
+Start from [INTERVIEW.md](INTERVIEW.md) (pitch, 11 questions) and use [decisions.md](architecture/decisions.md) for
+the full arguments: each decision is written with alternatives, why and cost so it can be defended.
 
 Try giving the one-minute version: the question (SCOPE section 1), the one rule (D1), what runs today (overview
 status table), and the honest limits ([uncertainty.md](architecture/uncertainty.md) and the research

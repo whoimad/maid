@@ -71,7 +71,7 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Alternatives:** perturb each weight by ±x% and renormalize; uniform weights on the simplex (classic SMAA with no weight information); one combined simulation.
 - **Why:** bootstrap measures estimation noise from having only ~12 companies; Dirichlet(concentration × w) stays on the simplex, is centred on the point weights and has one spread parameter. Keeping them separate shows which kind of uncertainty drives a rank interval ([robustness.md](robustness.md)).
 - **Cost:** bootstrap understates uncertainty at n≈12 (it only resamples observed companies); `concentration` (placeholder 100) is hand-set.
-- **Status:** implemented as a library; calibration OPEN.
+- **Status:** implemented and wired into the graph's `robustness` node (demo); calibration OPEN.
 
 ## D14. Model: DeepSeek (`deepseek-flash`) for the pipeline
 - **Alternatives:** Claude or GPT models; an older open-weight model with an earlier cutoff.
