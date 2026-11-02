@@ -17,3 +17,12 @@ def test_override_through_form():
     assert not at.exception
     assert at.session_state["overrides"][0]["reason"] == "manager disagrees"
     assert any("manager disagrees" in m.value for m in at.markdown)
+
+
+def test_empty_reason_is_rejected_and_app_stays_usable():
+    at = AppTest.from_file("../app/streamlit_app.py", default_timeout=60).run()
+    at.button[0].click().run()  # submit with an empty reason
+    assert not at.exception
+    assert at.session_state["overrides"] == []
+    assert len(at.tabs) == 7
+    assert any("Override rejected" in e.value for e in at.error)
