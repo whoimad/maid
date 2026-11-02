@@ -40,6 +40,8 @@ streamlit run app/streamlit_app.py
 - `src/maid/state.py`: shared state and score schema
 - `src/maid/cache.py`: on-disk cache for API/data calls
 - `src/maid/config.py`: settings from environment
+- `src/maid/xbrl.py`: point-in-time XBRL extraction (pure)
+- `src/maid/sec.py`: cached SEC EDGAR client
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
 - `docs/architecture/`: architecture overview, per-block docs, design decisions
