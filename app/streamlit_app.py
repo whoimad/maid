@@ -102,8 +102,8 @@ with tabs[2]:
 with tabs[3]:
     w = pd.DataFrame(weight_rows(state))
     st.altair_chart(alt.Chart(w).mark_bar().encode(
-        x=alt.X("method:N", title=None), y=alt.Y("weight:Q"), color="method:N",
-        column=alt.Column("criterion:N"), tooltip=["method", "criterion", "weight", "used"]), width="stretch")
+        x=alt.X("criterion:N", axis=alt.Axis(labelAngle=-30), title=None), xOffset="method:N",
+        y="weight:Q", color="method:N", tooltip=["method", "criterion", "weight", "used"]), width="stretch")
     st.write(f"Weighting in use: **{weighting}**. The methods disagree because they reward different things "
              "(dispersion vs. dispersion and independence), so the weights, and the ranking, depend on the choice. "
              "See `docs/architecture/uncertainty.md`.")
@@ -112,8 +112,11 @@ with tabs[4]:
     r = pd.DataFrame(ranking_rows(state))
     st.dataframe(r, hide_index=True)
     st.metric("Kendall tau, TOPSIS vs SAW", f"{state['method_agreement']['kendall_tau_topsis_saw']:.3f}")
+    n = len(state["companies"])
+    ax = alt.Axis(tickMinStep=1, format="d")
     st.altair_chart(alt.Chart(r).mark_circle(size=90).encode(
-        x=alt.X("rank:Q", title="TOPSIS rank"), y=alt.Y("saw_rank:Q", title="SAW rank"),
+        x=alt.X("rank:Q", title="TOPSIS rank", scale=alt.Scale(domain=[1, n]), axis=ax),
+        y=alt.Y("saw_rank:Q", title="SAW rank", scale=alt.Scale(domain=[1, n]), axis=ax),
         tooltip=["company", "rank", "saw_rank"]), width="stretch")
 
 with tabs[5]:
@@ -121,7 +124,7 @@ with tabs[5]:
     iv = pd.DataFrame(interval_rows(state, src))
     order = list(iv["company"])
     base = alt.Chart(iv).encode(y=alt.Y("company:N", sort=order))
-    st.altair_chart(base.mark_rule().encode(x=alt.X("lo:Q", title="Rank (1 = best)"), x2="hi:Q")
+    st.altair_chart(base.mark_rule().encode(x=alt.X("lo:Q", title="Rank (1 = best)", scale=alt.Scale(domain=[1, n]), axis=ax), x2="hi:Q")
                     + base.mark_point(filled=True, size=80).encode(x="point:Q", tooltip=["company", "point", "lo", "hi"]),
                     width="stretch")
     st.caption("The bar spans the 5th to 95th percentile of rank over the draws (a 90% interval); "
