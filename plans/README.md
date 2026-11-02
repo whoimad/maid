@@ -14,7 +14,7 @@ honor its STOP conditions, and update your row when done.
 | [003](003-entropy-normalization-variant.md) | Entropy: add textbook sum-normalized variant, rerun spike #6, correct docs | P1 | M | 001 (soft) | DONE (branch `fix/entropy-variant`, a3f9133; reviewed, not merged; default variant still undecided) |
 | [004](004-mcdm-input-validation-and-review-overrides.md) | MCDM input validation; human-review override schema; checkpoint type allowlist | P2 | S | 003 | DONE (reviewed; spike output unchanged, strict checkpoint mode verified) |
 | [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | DONE (reviewed; 37 tests pass with 004 merged; library only, not wired into the graph) |
-| [006](006-overview-accuracy-and-c4.md) | Overview: built-vs-planned status, fix false claims, C4 context/container diagrams, doc link test | P1 | S | PR #13 | TODO |
+| [006](006-overview-accuracy-and-c4.md) | Overview: built-vs-planned status, fix false claims, C4 context/container diagrams, doc link test | P1 | S | PR #13 | DONE (branch `docs/overview-status`, 60bf819; reviewed after 1 revision: Mermaid label quoting; not merged) |
 | [007](007-langgraph-block-doc.md) | LangGraph block doc (state, nodes, interrupt/resume, target `Send` fan-out) with code-checked diagram | P1 | M | 006 | TODO |
 | [008](008-uncertainty-doc.md) | Uncertainty budget: every noise source, how measured, what is built | P1 | M | PR #13, 006 | TODO |
 | [009](009-decisions-d8-d15.md) | decisions.md D8–D15: rankers, scale, benefit-only, normalization, Kendall tau, perturbation, model, no ML | P1 | M | PR #13, 006 | TODO |
