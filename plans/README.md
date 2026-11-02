@@ -11,7 +11,7 @@ honor its STOP conditions, and update your row when done.
 |------|-------|----------|--------|------------|--------|
 | [001](001-ci-lint-claude-md.md) | CI (pytest + ruff) and CLAUDE.md | P1 | S | — | DONE (branch `chore/ci-lint`, b18c617; reviewed, not merged) |
 | [002](002-config-and-cache-hardening.md) | Settings read env at call time; atomic, versioned disk cache | P1 | S | 001 (soft) | DONE (branch `fix/config-cache`, 2020235; reviewed, not merged) |
-| [003](003-entropy-normalization-variant.md) | Entropy: add textbook sum-normalized variant, rerun spike #6, correct docs | P1 | M | 001 (soft) | TODO |
+| [003](003-entropy-normalization-variant.md) | Entropy: add textbook sum-normalized variant, rerun spike #6, correct docs | P1 | M | 001 (soft) | DONE (branch `fix/entropy-variant`, a3f9133; reviewed, not merged; default variant still undecided) |
 | [004](004-mcdm-input-validation-and-review-overrides.md) | MCDM input validation; human-review override schema; checkpoint type allowlist | P2 | S | 003 | TODO |
 | [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | TODO |
 

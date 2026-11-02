@@ -20,7 +20,7 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 
 ## D4. Data-driven weights (entropy, CRITIC), no AHP in v1
 - **Alternatives:** AHP with my own pairwise judgments; fixed equal weights.
-- **Why:** simplicity and less subjective input. **Cost:** noisy weights at n~12 (see spike #6) and no expert knowledge. Mitigated by perturbation and rank intervals.
+- **Why:** simplicity and less subjective input. **Cost:** noisy weights at n~12 (see spike #6) and no expert knowledge. Mitigated by perturbation and rank intervals. Entropy variant (min-max vs column-sum) is an open sub-decision; spike #6 compares them.
 
 ## D5. Report rank intervals, not just a rank
 - **Why:** with 12 alternatives and noisy weights, a single rank overstates certainty.

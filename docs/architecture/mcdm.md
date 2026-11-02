@@ -19,7 +19,7 @@ flowchart LR
 
 | Method | Idea | Strength | Weakness (seen or known) |
 |---|---|---|---|
-| Entropy | More "informative" (less evenly spread) criteria get more weight | Simple, uses only the data | Rewards concentration, so a single outlier can dominate (test `test_entropy_rewards_concentration_not_spread`). Noisier than CRITIC at n=12 in our simulation |
+| Entropy | More "informative" (less evenly spread) criteria get more weight | Simple, uses only the data | With min-max pre-normalization (current default) a single outlier can dominate (test `test_minmax_entropy_rewards_single_outlier`); the textbook sum-normalized variant (`normalization="sum"`, positive data only) does not do this. min-max variant: noisier than CRITIC at n=12 in our simulation |
 | CRITIC | Weight = spread x (1 - correlation with other criteria) | Down-weights redundant criteria (tested) | Uses Pearson correlation, outlier-sensitive; did not improve with n under skew in our simulation |
 | Equal | 1/m each | No estimation noise; honest baseline | Ignores that criteria differ in importance |
 
@@ -45,3 +45,4 @@ See [weight-stability-results.md](../research/weight-stability-results.md) (synt
 ## Known limitations
 All criteria must already be benefit-type. Min-max normalization depends on sample extremes, so a
 company added or removed can change weights and ranks.
+Default entropy variant is not yet decided (min-max vs sum); see spike #6 results.
