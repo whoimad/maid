@@ -22,6 +22,8 @@ honor its STOP conditions, and update your row when done.
 | [011](011-demo-pipeline-end-to-end.md) | Working prototype: `python -m maid.demo` runs the full graph on synthetic data with a stub scorer | P1 | L | 007 | DONE (branch `feat/demo-pipeline`, c1817eb; reviewed after 1 amendment: legacy graph tests now pass 2 companies, since real MCDM needs n >= 2) |
 | [012](012-streamlit-gui.md) | Streamlit GUI: pipeline, inputs, scores + overrides, weights, ranking, rank intervals | P1 | M | 011 | TODO |
 | [013](013-walkthrough.md) | Walkthrough: guided tour of what to run, read and open | P1 | S | 007–009, 011, 012 | TODO |
+| [014](014-settings-validation-and-evidence-check.md) | Validate settings at ingest (fail before review); evidence check raises instead of `assert` | P1 | S | 011 | TODO |
+| [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -51,7 +53,15 @@ Owner asked to iterate autonomously to a working prototype + GUI + walkthrough. 
 (auto-mode blocks agent merges), so reviewed work is stacked on the local branch `integration/prototype`; open one
 PR from it at the end. Order: 011 → 012 → 013 → 010 (interview sheet last, so it can mention the demo and GUI).
 
+### Batch 4 (014–015): audit of the plan-011 code (2026-11-02, at `73d9bb1`)
+
+Audit of `graph.py`, `demo.py`, `scoring.py`, `matrix.py`, `demo_data.py` after the demo pipeline landed. 48 tests pass,
+ruff clean. Order: 014, 015 and 012 in parallel (disjoint files), then 013, then 010.
+
 ## Findings considered and rejected
+
+- Stub scorer evidence can come from a different band than the aggregated score (latent 3 -> median 4): demo realism only; the human checkpoint is where that mismatch gets caught.
+- `kendall_tau` returns NaN when one score vector is constant: cannot happen on the demo data; revisit with real data.
 
 - `scipy` declared as a runtime dependency though only the spike script uses it: plan 005 uses `scipy.stats.rankdata` at runtime, so keep it.
 - Min-max normalization makes weights/ranks depend on which companies are in the sample: already documented in
@@ -68,6 +78,10 @@ PR from it at the end. Order: 011 → 012 → 013 → 010 (interview sheet last,
 - Worked numeric example (4 companies x 3 criteria through CRITIC -> TOPSIS -> rank intervals, script + pinned test): good for learning the maths; not selected in batch 2.
 - Build the LangGraph fan-out for real (`Send` per company x criterion, reducer, SQLite checkpointer) with stub scorers, so plan 007's "target design" becomes the current graph. No API cost.
 - Pin the dated DeepSeek model version and log it per run (`docs/research/model-cutoff.md` recommendation 2; the alias was re-pointed on 2026-10-17).
+
+- Propagate score noise (the K samples in `score_samples`) into rank intervals as a third source, beside bootstrap and
+  Dirichlet. This is the core of the noise argument, and the data is already in state. Needs a design decision
+  (resample one of the K samples per cell vs. a normal around the median).
 
 ## Not audited
 
