@@ -74,6 +74,15 @@ All are benefit-type (higher is better). The tag lists are fallbacks: the first 
 
 Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NPL are not reliably tagged in us-gaap XBRL, so the bank criteria need their own spike before coding.
 
+## Backtest
+
+- Rule: the TOPSIS score from the graph on real data (decision date 2025-03-31, quantitative criteria only) against each company's total return from the 2025-03-31 close to the 2026-03-31 close (yfinance `Adj Close`, dividends reinvested).
+- Primary test, fixed before the result was seen: CRITIC weights (the graph default), Kendall tau, two-sided (D12). Spearman rho is secondary. Entropy and equal weights are sensitivity checks, not extra chances to find an effect.
+- n = 15: only |rho| > ~0.51 is distinguishable from chance at p < 0.05.
+- The risk-adjusted measure (SCOPE section 5) is not defined yet and is deferred.
+- Look-ahead guard: only `src/maid/backtest.py` and `scripts/backtest.py` read post-decision prices. The graph never imports `maid.prices` (tested).
+- Run: `python scripts/backtest.py`. Output is printed only and stays local.
+
 ## Local-only data
 
 Downloads and derived files live under `data/cache/` and `data/raw/` (both gitignored) and are never committed or pushed (owner rule). Only `data/universe/*.csv` is committed. Tests use small hand-made JSON fixtures under `tests/fixtures/`, never real downloads, and never touch the network.
