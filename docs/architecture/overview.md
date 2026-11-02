@@ -137,7 +137,7 @@ validated with a mandatory reason and applied to the scores in the mcdm node bef
 
 ```mermaid
 flowchart TB
-    R[Ranking from pipeline] --> B1[vs 2025 return / risk-adjusted]
+    R[Ranking from pipeline] --> B1[vs evaluation-window return (2025-04 to 2026-03) / risk-adjusted]
     R --> B2[vs equal-weight and SAW baselines]
     R --> B3[Method agreement<br/>TOPSIS vs SAW, entropy vs CRITIC]
     S[K repeated LLM runs] --> B4[Score stability]

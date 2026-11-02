@@ -77,7 +77,7 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 ## D14. Model: DeepSeek (`deepseek-flash`) for the pipeline
 - **Alternatives:** Claude or GPT models; an older open-weight model with an earlier cutoff.
 - **Why:** budget (SCOPE §8); cheapest option with JSON output, tool calls and a 1M context ([model-cutoff.md](../research/model-cutoff.md) §5).
-- **Cost:** no published knowledge cutoff, likely after the 2024-12-31 decision date (look-ahead risk, D3); the alias was re-pointed on 2026-10-17, so the dated version must be pinned and logged per run (not done yet).
+- **Cost:** no published knowledge cutoff, likely after the 2025-03-31 decision date (look-ahead risk, D3); the alias was re-pointed on 2026-10-17, so the dated version must be pinned and logged per run (not done yet).
 - **Status:** decided for v1; older-model ablation OPEN (SCOPE §9).
 
 ## D15. No trained predictive (ML) model
