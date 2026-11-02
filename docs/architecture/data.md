@@ -1,6 +1,6 @@
 # Real data: sources, time rule, universe, criteria
 
-This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: planned.
+This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`); not wired into the graph yet.
 
 ## Sources
 
