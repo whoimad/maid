@@ -32,6 +32,7 @@ honor its STOP conditions, and update your row when done.
 | [021](021-parallel-sec-downloads.md) | Parallel SEC downloads (8 workers, shared 8 req/s cap) + retry on transient errors | P1 | S | 020 | DONE (branch `perf/parallel-sec`, befb30c; reviewed; merged) |
 | [022](022-universe-share-fallbacks-and-price-retry.md) | Fix universe: share-count fallbacks (Alphabet/Meta missing), Yahoo retries (NVIDIA dropped), Adobe R&D tag | P1 | S | 021 | DONE (branch `fix/universe-shares`, d7ae7b3; reviewed; merged; real runs: tech and banks pass sanity checks, CSVs committed) |
 | [023](023-real-data-quant-only-graph.md) | Graph runs on real SEC data: `source="sec"`, frozen tech universe, labels Company A..O, quant only, no LLM | P1 | M | 019–022, D18 | DONE (branch `feat/real-data-graph`, 65d9146; reviewed; merged; real run: 15 OK, CRITIC top 5 NVDA, META, AVGO, NOW, QCOM; weights sum 1) |
+| [024](024-backtest-quant-only.md) | Backtest: TOPSIS score vs total return 2025-04-01..2026-03-31; primary CRITIC + Kendall tau, fixed before the result | P1 | S | 023 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
