@@ -81,7 +81,7 @@ flowchart LR
     A[SEC EDGAR<br/>10-K text + XBRL] --> I[Ingest]
     B[yfinance<br/>prices] --> I
     I -->|ratios from XBRL| Q[Quantitative criteria]
-    I -->|filing text, names anonymized| S[Qualitative scorer agents<br/>one per company x criterion, K samples (planned)]
+    I -->|filing text, names anonymized| S["Qualitative scorer agents<br/>one per company x criterion, K samples (planned)"]
     S --> H{{Human checkpoint<br/>review scores + evidence}}
     H --> M[MCDM engine<br/>weights + ranking]
     Q --> M
