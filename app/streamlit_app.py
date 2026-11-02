@@ -131,7 +131,11 @@ with tabs[4]:
         tooltip=["company", "rank", "saw_rank"]), width="stretch")
 
 with tabs[5]:
-    src = st.radio("Perturbation", ["bootstrap", "dirichlet"], horizontal=True)
+    src = st.radio("Perturbation", ["bootstrap", "dirichlet", "score_noise"], horizontal=True)
+    st.caption({"bootstrap": "Weight-estimation noise: weights recomputed on resampled companies.",
+                "dirichlet": "Weight-choice uncertainty: weights drawn around the point weights.",
+                "score_noise": "LLM score noise: each score re-drawn from its K samples, weights recomputed; "
+                               "overridden scores held fixed."}[src])
     iv = pd.DataFrame(interval_rows(state, src))
     order = list(iv["company"])
     base = alt.Chart(iv).encode(y=alt.Y("company:N", sort=order))
