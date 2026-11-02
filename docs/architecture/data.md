@@ -41,7 +41,7 @@ This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py
 
 - Known side effects of SIC: Amazon (5961) and Tesla (3711) are not tech. Visa and Mastercard (7389) are not tech. Goldman Sachs and Morgan Stanley (6211, broker-dealers) are not banks. Alphabet and Meta (7370) are tech.
 - Eligibility: listed on NYSE or Nasdaq; files 10-K (foreign 20-F filers are excluded); has a 10-K filed on or before the decision date that also reports the prior fiscal year (needed for revenue growth).
-- Ranking: market cap on the decision date = shares outstanding (XBRL `dei:EntityCommonStockSharesOutstanding`, summed over share classes, from the latest filing filed on or before the decision date) x closing price on the decision date (yfinance, split-corrected). Multi-class companies use one class's price: an approximation.
+- Ranking: market cap on the decision date = shares outstanding from the latest filing filed on or before the decision date: cover page (`dei:EntityCommonStockSharesOutstanding`, summed over classes), else `us-gaap:CommonStockSharesOutstanding`, else `us-gaap:WeightedAverageNumberOfSharesOutstandingBasic` (multi-class filers such as Alphabet and Meta only appear through the fallbacks, because the SEC API omits per-class cover facts). The source used is recorded in the CSV x closing price on the decision date (yfinance, split-corrected). Multi-class companies use one class's price: an approximation.
 - The list is frozen and committed at `data/universe/<sector>.csv`. It is the only committed file under `data/`.
 - Known limitation (kept from SCOPE section 4): selecting the largest names adds mild survivorship and winner bias.
 
@@ -58,7 +58,7 @@ All are benefit-type (higher is better). The tag lists are fallbacks: the first 
 | `revenue_growth` | Rev(FY) / Rev(FY-1) - 1 | Revenue: `RevenueFromContractWithCustomerExcludingAssessedTax`, `Revenues`, `SalesRevenueNet` |
 | `operating_margin` | OperatingIncome / Rev | `OperatingIncomeLoss` |
 | `fcf_margin` | (OperatingCashFlow - Capex) / Rev | `NetCashProvidedByUsedInOperatingActivities`; capex: `PaymentsToAcquirePropertyPlantAndEquipment`, `PaymentsToAcquireProductiveAssets` |
-| `rd_intensity` | R&D / Rev | `ResearchAndDevelopmentExpense`, `ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost` |
+| `rd_intensity` | R&D / Rev | `ResearchAndDevelopmentExpense`, `ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`, `ResearchAndDevelopmentExpenseSoftwareExcludingAcquiredInProcessCost` |
 
 - Annual fact = duration between 350 and 380 days (52/53-week years) with `end` equal to the 10-K's fiscal period end. FY-1 = the same tags, same 10-K accession, `end` 350-380 days earlier.
 - If no tag matches, ingest fails loudly with the company, criterion and tags tried. It never fills in zero.
