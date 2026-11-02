@@ -19,8 +19,20 @@ python -m maid.demo
 python -m maid.demo --weighting entropy --json out.json
 ```
 
+## Run the GUI
+```bash
+pip install -e ".[gui]"
+streamlit run app/streamlit_app.py
+```
+
 ## Layout
-- `src/maid/graph.py`: LangGraph pipeline skeleton (stub nodes, human-review interrupt)
+- `src/maid/graph.py`: LangGraph pipeline; runs the demo pipeline end to end (synthetic data, stub scorer), with a human-review interrupt
+- `src/maid/demo.py`: runs the graph and auto-resumes the review (`python -m maid.demo`)
+- `src/maid/demo_data.py`: deterministic synthetic companies, numbers and filing excerpts
+- `src/maid/scoring.py`: stub scorer, K-sample aggregation, evidence check
+- `src/maid/matrix.py`: builds the decision matrix, applies overrides, Kendall tau
+- `src/maid/gui_data.py`: pure row/DOT helpers that shape pipeline state for the GUI
+- `app/streamlit_app.py`: thin Streamlit UI over the demo pipeline
 - `src/maid/state.py`: shared state and score schema
 - `src/maid/cache.py`: on-disk cache for API/data calls
 - `src/maid/config.py`: settings from environment
