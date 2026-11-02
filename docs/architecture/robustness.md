@@ -1,8 +1,8 @@
 # Block: Robustness (`src/maid/mcdm/robustness.py`)
 
 **Responsibility:** report rank intervals and rank acceptability instead of point ranks, under two
-separate sources of weight uncertainty. Pure numpy, no LLM, no I/O. Library only: not yet wired into
-the graph's `robustness` node.
+separate sources of weight uncertainty. Pure numpy, no LLM, no I/O. Wired into
+the graph's `robustness` node, which runs it on the demo decision matrix (see [graph.md](graph.md)).
 
 ```mermaid
 flowchart LR

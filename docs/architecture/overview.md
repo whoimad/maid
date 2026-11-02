@@ -40,7 +40,7 @@ flowchart LR
 ```
 
 MAID is one system with one human user. It reads public filings and prices and sends only anonymized
-prompts to the LLM provider. The external connections are planned; ingest and scoring are stubs today.
+prompts to the LLM provider. The external connections are planned; today ingest loads a synthetic demo dataset and scoring uses a stub scorer.
 
 Level 2, containers:
 
@@ -150,6 +150,6 @@ With about 12 companies the backtest is noisy; the project reports correlations 
 ## Blocks
 - [graph.md](graph.md): LangGraph pipeline, state, interrupt/resume (skeleton implemented, ingest and scoring are stubs; mcdm and robustness nodes are real)
 - [mcdm.md](mcdm.md): weights and ranking (implemented)
-- [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (library implemented, not yet wired into the graph)
+- [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (implemented and wired into the graph)
 - [uncertainty.md](uncertainty.md): every noise source, how it is measured, what is built
 - Ingest, scorer agents, human checkpoint, report: documented as each is built

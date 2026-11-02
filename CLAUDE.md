@@ -13,7 +13,13 @@ python scripts/weight_stability.py # spike #6 simulation
 ```
 
 ## Layout
-- `src/maid/graph.py`: LangGraph pipeline skeleton (stub nodes, human-review interrupt)
+- `src/maid/graph.py`: LangGraph pipeline: demo run end to end (synthetic data, stub scorer, human-review interrupt)
+- `src/maid/demo.py`: runnable demo (`python -m maid.demo`)
+- `src/maid/demo_data.py`: synthetic demo dataset
+- `src/maid/scoring.py`: stub scorer, evidence check
+- `src/maid/matrix.py`: overrides -> decision matrix
+- `src/maid/gui_data.py`: pure GUI data helpers
+- `app/streamlit_app.py`: Streamlit GUI
 - `src/maid/state.py`: shared state and score schema
 - `src/maid/cache.py`: on-disk cache for API/data calls
 - `src/maid/config.py`: settings from environment

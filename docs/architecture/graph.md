@@ -39,6 +39,15 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 - `weights`: criterion -> weight from the MCDM engine.
 - `ranking`: companies ordered by the MCDM engine.
 - `report`: final report text.
+- `criteria`: column order of X.
+- `filings`: company -> filing text the scorer reads.
+- `score_samples`: "company|criterion" -> K sampled scores.
+- `score_noise`: "company|criterion" -> std of the K samples.
+- `settings`: k, weighting, seed, n_draws, concentration.
+- `matrix`: X after overrides.
+- `scores`: TOPSIS and SAW scores per company, in `companies` order.
+- `method_agreement`: Kendall tau between TOPSIS and SAW.
+- `robustness`: bootstrap and Dirichlet rank intervals, as lists.
 
 Two Pydantic models are stored in state:
 
