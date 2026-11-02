@@ -36,7 +36,7 @@ python -m maid.demo
 python -m maid.demo --weighting entropy --json out.json
 ```
 
-It prints a Markdown report: ranking with TOPSIS and SAW scores, bootstrap and Dirichlet 90% rank intervals,
+It prints a Markdown report: ranking with TOPSIS and SAW scores, bootstrap, Dirichlet and score-noise 90% rank intervals,
 weights, Kendall tau between TOPSIS and SAW, and human overrides ("none" unless you pass `--overrides`).
 The flags are defined in `main()` in [demo.py](../src/maid/demo.py).
 
@@ -56,7 +56,7 @@ concentration. One line per tab, using the tab names in the app:
   (a reason is required) and watch the rest of the tabs change.
 - **Weights**: entropy, CRITIC and equal weights side by side; the one in use is named under the chart.
 - **Ranking**: TOPSIS and SAW ranks, Kendall tau between them, and a TOPSIS-vs-SAW rank scatter.
-- **Robustness**: choose bootstrap or Dirichlet; bars are 90% rank intervals, the heat map is how often each
+- **Robustness**: choose bootstrap, Dirichlet or score noise; bars are 90% rank intervals, the heat map is how often each
   company gets each rank.
 - **Report**: the same Markdown report the CLI prints.
 
@@ -185,8 +185,9 @@ dominate; `test_minmax_entropy_rewards_single_outlier` in [test_mcdm.py](../test
      of 100).
    - `rank_intervals` ranks the original `X` under each draw and returns `RankIntervals`: point rank, median,
      5th/95th percentile `lo`/`hi`, and an acceptability matrix.
-   - `robust_ranking` runs both and returns them separately.
-4. Decisions: D5 (intervals, not just a rank), D12 (Kendall tau primary), D13 (two separate perturbations).
+   - `score_noise_intervals` re-draws each LLM score from its K samples and ranks each perturbed `X` with weights recomputed (LLM score noise).
+   - `robust_ranking` runs all three (score noise only when samples are passed) and returns them separately.
+4. Decisions: D5 (intervals, not just a rank), D12 (Kendall tau primary), D13 (two separate weight perturbations), D16 (score noise).
 5. GUI **Robustness** tab: change **Dirichlet concentration** in the sidebar and choose "dirichlet"; bars narrow
    as concentration grows and widen as it shrinks (`test_huge_concentration_collapses_interval` in
    [test_robustness.py](../tests/test_robustness.py) tests the extreme).
@@ -256,8 +257,8 @@ status table), and the honest limits ([uncertainty.md](architecture/uncertainty.
 4. Why must all criteria be benefit-type? One code path and fewer sign bugs; see D10.
 5. Why does the report give rank intervals and not just a rank? With about 12 alternatives and noisy weights a
    single rank overstates certainty; see D5.
-6. Why are the bootstrap and Dirichlet intervals reported separately? To show which kind of uncertainty drives a
-   rank interval; see D13 and [robustness.md](architecture/robustness.md).
+6. Why are the bootstrap, Dirichlet and score-noise intervals reported separately? To show which kind of uncertainty drives a
+   rank interval; see D13, D16 and [robustness.md](architecture/robustness.md).
 7. Which weighting was less noisy at n=12 in spike #6, and what is the caveat? CRITIC (TV 0.056 vs 0.137 for
    min-max entropy, Gaussian regime), but synthetic data, one generator, one seed; see
    [weight-stability-results.md](research/weight-stability-results.md).
