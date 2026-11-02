@@ -7,7 +7,8 @@ TAGS = {
     "operating_income": ["OperatingIncomeLoss"],
     "operating_cash_flow": ["NetCashProvidedByUsedInOperatingActivities"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
-    "rd": ["ResearchAndDevelopmentExpense", "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"],
+    "rd": ["ResearchAndDevelopmentExpense", "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
+           "ResearchAndDevelopmentExpenseSoftwareExcludingAcquiredInProcessCost"],
 }
 TECH_CRITERIA = ["revenue_growth", "operating_margin", "fcf_margin", "rd_intensity"]  # same names as demo_data.QUANT_CRITERIA
 

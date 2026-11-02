@@ -5,25 +5,31 @@ Usage: python scripts/select_universe.py {tech,banks} [--date 2025-03-31] [--wri
 import argparse
 import csv
 import sys
+import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from maid import sec
 from maid.cache import DiskCache
 from maid.config import get_settings
-from maid.prices import market_price_on
+from maid.prices import PriceNetworkError, market_price_on
 from maid.sec import SecClient, cik10
 from maid.universe import SECTORS, eligible_annual, in_sector, listed, shares_outstanding, top_n
 
 PRESCREEN = 40
 WORKERS = 8
-COLS = ["rank", "ticker", "cik", "name", "sic", "market_cap_usd", "shares", "shares_accn", "close", "price_date", "decision_date"]
+COLS = ["rank", "ticker", "cik", "name", "sic", "market_cap_usd", "shares", "shares_accn", "close", "price_date", "decision_date", "shares_source"]
 
 
-def frame_shares(client: SecClient, period: str) -> dict[int, float]:
-    """Sum of cover-page shares per CIK from a dei frame."""
+FRAMES = [("dei", "EntityCommonStockSharesOutstanding", "CY2025Q1I"), ("dei", "EntityCommonStockSharesOutstanding", "CY2024Q4I"),
+          ("us-gaap", "CommonStockSharesOutstanding", "CY2024Q4I"),
+          ("us-gaap", "WeightedAverageNumberOfSharesOutstandingBasic", "CY2024")]
+
+
+def frame_shares(client: SecClient, taxonomy: str, tag: str, period: str) -> dict[int, float]:
+    """Sum of shares per CIK from a frame."""
     out: dict[int, float] = {}
-    for r in client.frame("dei", "EntityCommonStockSharesOutstanding", "shares", period)["data"]:
+    for r in client.frame(taxonomy, tag, "shares", period)["data"]:
         out[int(r["cik"])] = out.get(int(r["cik"]), 0.0) + float(r["val"])
     return out
 
@@ -68,17 +74,32 @@ def main() -> int:
         in_sec = {cik: in_sec[cik] for cik in cands if cik in in_sec}
         print(f"SIC scan done: {len(in_sec)} in sector, {failed} failed", file=sys.stderr)
 
-        shares = frame_shares(client, "CY2025Q1I")
-        for cik, v in frame_shares(client, "CY2024Q4I").items():
-            shares.setdefault(cik, v)
+        shares: dict[int, float] = {}
+        for tax, tag, period in FRAMES:
+            try:
+                fs = frame_shares(client, tax, tag, period)
+            except urllib.error.HTTPError as e:
+                if e.code != 404:
+                    raise
+                print(f"warning: frame {tax}:{tag} {period} not found", file=sys.stderr)
+                continue
+            for cik, v in fs.items():
+                shares.setdefault(cik, v)
         est = []
         for cik in in_sec:
             if cik not in shares:
                 continue
             try:
                 est.append((shares[cik] * market_price_on(cands[cik][0], a.date)["close"], cik))
-            except Exception as e:  # yfinance raises many types
+            except PriceNetworkError as e:
+                print(f"ERROR price lookup failed after retries: {e}", file=sys.stderr)
+                return 1
+            except ValueError as e:
+                if "SEC_USER_AGENT" in str(e):
+                    raise
                 print(f"warning: no price for {cands[cik][0]}: {e}", file=sys.stderr)
+        n_with = sum(1 for c in in_sec if c in shares)
+        print(f"pre-screen: {len(in_sec)} in sector, {n_with} with shares, {len(est)} priced", file=sys.stderr)
         top = [cik for _, cik in sorted(est, key=lambda x: (-x[0], x[1]))[:PRESCREEN]]
 
         rows, price_fail = [], 0
@@ -87,21 +108,20 @@ def main() -> int:
             if not eligible_annual(facts, a.date, a.sector):
                 continue
             try:
-                n_sh, accn = shares_outstanding(facts, a.date)
+                n_sh, accn, src = shares_outstanding(facts, a.date)
                 p = market_price_on(cands[cik][0], a.date)
+            except PriceNetworkError as e:
+                print(f"ERROR price lookup failed after retries: {e}", file=sys.stderr)
+                return 1
             except ValueError as e:
                 if "SEC_USER_AGENT" in str(e):
                     raise
                 print(f"warning: {cands[cik][0]}: {e}", file=sys.stderr)
                 price_fail += 1
                 continue
-            except Exception as e:
-                print(f"warning: {cands[cik][0]}: {e}", file=sys.stderr)
-                price_fail += 1
-                continue
             rows.append({"cik": cik, "ticker": cands[cik][0], "name": in_sec[cik]["name"], "sic": in_sec[cik]["sic"],
                          "market_cap": n_sh * p["close"], "shares": n_sh, "accn": accn, "close": p["close"],
-                         "price_date": p["date"]})
+                         "price_date": p["date"], "source": src})
         if top and price_fail / len(top) > 0.25:
             print(f"ERROR: {price_fail}/{len(top)} candidates failed price/share lookup; yfinance may be broken", file=sys.stderr)
             return 1
@@ -123,7 +143,7 @@ def main() -> int:
             w.writerow(COLS)
             for i, r in enumerate(sel, 1):
                 w.writerow([i, r["ticker"], r["cik"], r["name"], r["sic"], round(r["market_cap"]), r["shares"], r["accn"],
-                            r["close"], r["price_date"], a.date])
+                            r["close"], r["price_date"], a.date, r["source"]])
         print(f"wrote {out}")
     return 0
 

@@ -1,4 +1,5 @@
 """Prices via yfinance (cached on disk, local only). Pure helpers work on {date: value} dicts."""
+import time
 from datetime import date as _date
 from datetime import datetime, timedelta
 
@@ -6,6 +7,11 @@ from maid.cache import DiskCache
 from maid.config import get_settings
 
 LOOKBACK_DAYS = 7
+RETRIES = 3
+
+
+class PriceNetworkError(RuntimeError):
+    """yfinance kept failing after retries (network or service error, not missing data)."""
 
 
 def _d(s: str) -> _date:
@@ -48,10 +54,20 @@ def fetch_series(ticker: str, start: str, end: str, field: str = "Close") -> dic
     """Daily {date: value} for a field over [start, end), cached."""
     def go():
         import yfinance as yf
-        h = yf.Ticker(ticker).history(start=start, end=end, auto_adjust=False)
-        if h.empty:
-            raise ValueError(f"no price data for {ticker} {start}..{end}")
-        return {i.strftime("%Y-%m-%d"): float(v) for i, v in h[field].items()}
+        err = None
+        for attempt in range(RETRIES):
+            try:
+                h = yf.Ticker(ticker).history(start=start, end=end, auto_adjust=False)
+                err = None
+                if not h.empty:
+                    return {i.strftime("%Y-%m-%d"): float(v) for i, v in h[field].items()}
+            except Exception as e:  # yfinance raises many types
+                err = e
+            if attempt < RETRIES - 1:
+                time.sleep(2 ** attempt)
+        if err is not None:
+            raise PriceNetworkError(f"{ticker}: {err}")
+        raise ValueError(f"no price data for {ticker} {start}..{end}")
     return _cache().get_or_compute(DiskCache.key("yf", ticker, field, start, end), go)
 
 
@@ -59,7 +75,13 @@ def fetch_splits(ticker: str) -> dict[str, float]:
     """{date: ratio} split history, cached per day so one run is stable."""
     def go():
         import yfinance as yf
-        return {i.strftime("%Y-%m-%d"): float(v) for i, v in yf.Ticker(ticker).splits.items()}
+        for attempt in range(RETRIES):
+            try:
+                return {i.strftime("%Y-%m-%d"): float(v) for i, v in yf.Ticker(ticker).splits.items()}
+            except Exception as e:  # yfinance raises many types
+                if attempt == RETRIES - 1:
+                    raise PriceNetworkError(f"{ticker}: {e}") from e
+                time.sleep(2 ** attempt)
     return _cache().get_or_compute(DiskCache.key("yf", ticker, "splits", _date.today().isoformat()), go)
 
 

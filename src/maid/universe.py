@@ -1,4 +1,6 @@
 """Universe rule (docs/architecture/data.md): SIC sector, NYSE/Nasdaq, 10-K filer, top 15 by market cap."""
+from datetime import date as _date
+
 from maid import xbrl
 
 SECTORS = {
@@ -30,19 +32,34 @@ def listed(tickers_json: dict) -> dict[int, list[str]]:
     return out
 
 
-def shares_outstanding(facts: dict, date: str) -> tuple[float, str]:
-    """Sum of cover-page shares in the latest filing on or before date, and its accession."""
-    try:
-        rows = facts["facts"]["dei"]["EntityCommonStockSharesOutstanding"]["units"]["shares"]
-    except KeyError:
-        rows = []
-    rows = [r for r in rows if r["filed"] <= date]
-    if not rows:
-        raise ValueError(f"no shares outstanding filed on or before {date}: {facts.get('entityName')}")
-    filed = max(r["filed"] for r in rows)
-    accn = max(r["accn"] for r in rows if r["filed"] == filed)
-    uniq = {(r["end"], r["val"]) for r in rows if r["filed"] == filed and r["accn"] == accn}
-    return float(sum(v for _, v in uniq)), accn
+SHARE_SOURCES = [  # (taxonomy, tag), tried in order; the first with data filed on or before the date wins
+    ("dei", "EntityCommonStockSharesOutstanding"),   # cover page; missing for multi-class filers in companyfacts
+    ("us-gaap", "CommonStockSharesOutstanding"),     # balance sheet, all classes
+    ("us-gaap", "WeightedAverageNumberOfSharesOutstandingBasic"),  # last resort: period average
+]
+
+
+def _duration(r: dict) -> int:
+    """Days between start and end; instant facts count as 0."""
+    return (_date.fromisoformat(r["end"]) - _date.fromisoformat(r["start"])).days if "start" in r else 0
+
+
+def shares_outstanding(facts: dict, date: str) -> tuple[float, str, str]:
+    """Shares in the latest filing on or before date, its accession and the source tag."""
+    for tax, tag in SHARE_SOURCES:
+        rows = facts["facts"].get(tax, {}).get(tag, {}).get("units", {}).get("shares", [])
+        rows = [r for r in rows if r["filed"] <= date]
+        if not rows:
+            continue
+        filed = max(r["filed"] for r in rows)
+        accn = max(r["accn"] for r in rows if r["filed"] == filed)
+        rows = [r for r in rows if r["filed"] == filed and r["accn"] == accn]
+        if tax == "dei":
+            return float(sum(v for _, v in {(r["end"], r["val"]) for r in rows})), accn, tag
+        last = max(r["end"] for r in rows)
+        best = max((r for r in rows if r["end"] == last), key=_duration)
+        return float(best["val"]), accn, tag
+    raise ValueError(f"no shares outstanding filed on or before {date}: {facts.get('entityName')}")
 
 
 def eligible_annual(facts: dict, date: str, sector: str) -> bool:
