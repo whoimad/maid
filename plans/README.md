@@ -14,6 +14,11 @@ honor its STOP conditions, and update your row when done.
 | [003](003-entropy-normalization-variant.md) | Entropy: add textbook sum-normalized variant, rerun spike #6, correct docs | P1 | M | 001 (soft) | DONE (branch `fix/entropy-variant`, a3f9133; reviewed, not merged; default variant still undecided) |
 | [004](004-mcdm-input-validation-and-review-overrides.md) | MCDM input validation; human-review override schema; checkpoint type allowlist | P2 | S | 003 | DONE (reviewed; spike output unchanged, strict checkpoint mode verified) |
 | [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | DONE (reviewed; 37 tests pass with 004 merged; library only, not wired into the graph) |
+| [006](006-overview-accuracy-and-c4.md) | Overview: built-vs-planned status, fix false claims, C4 context/container diagrams, doc link test | P1 | S | PR #13 | DONE (branch `docs/overview-status`, 60bf819; reviewed after 1 revision: Mermaid label quoting; not merged) |
+| [007](007-langgraph-block-doc.md) | LangGraph block doc (state, nodes, interrupt/resume, target `Send` fan-out) with code-checked diagram | P1 | M | 006 | TODO |
+| [008](008-uncertainty-doc.md) | Uncertainty budget: every noise source, how measured, what is built | P1 | M | PR #13, 006 | TODO |
+| [009](009-decisions-d8-d15.md) | decisions.md D8–D15: rankers, scale, benefit-only, normalization, Kendall tau, perturbation, model, no ML | P1 | M | PR #13, 006 | TODO |
+| [010](010-interview-sheet.md) | Interview sheet: pitch, 11 sourced Q&As, what I'd change, glossary | P2 | S | 006–009 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -25,6 +30,17 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 005 after 004: it relies on the rankers already validating weight vectors; it does not modify 003/004's files.
 - Plan 003 deliberately does **not** change the entropy default. Choosing min-max vs sum is a maintainer decision to
   make after reading the rerun spike results (record it as a sub-decision under D4).
+
+### Batch 2 (006–010): explain-the-project docs, planned 2026-11-02 at `258af88` (`main`)
+
+Focus requested by the owner: the project is mainly for learning and for explaining in interviews, so this batch is
+docs only (architecture diagrams, decisions with trade-offs, the noise argument); no source changes.
+- Merge PR #13 first: 006, 008 and 009 reference `docs/architecture/robustness.md`.
+- 006 first: it creates `tests/test_docs.py` (relative-link check) that 007–010 rely on, and owns the overview body.
+  007 and 008 each add one line to the overview's Blocks list only.
+- 007, 008, 009 are independent of each other after 006.
+- 010 last: it only summarizes 006–009 and must add no new claims.
+- The C4 diagrams were folded into 006 (same file as the overview fixes) rather than a separate plan.
 
 ## Findings considered and rejected
 
@@ -40,9 +56,13 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 - Cost-type criteria + a second ranker family (VIKOR / PROMETHEE II), listed as "not implemented yet" in `docs/architecture/mcdm.md`.
 - SEC EDGAR XBRL ingest for quantitative criteria. Blocked on issue #3 (tech criteria list); SEC requires a declared User-Agent, which needs a new config variable.
+- Worked numeric example (4 companies x 3 criteria through CRITIC -> TOPSIS -> rank intervals, script + pinned test): good for learning the maths; not selected in batch 2.
+- Build the LangGraph fan-out for real (`Send` per company x criterion, reducer, SQLite checkpointer) with stub scorers, so plan 007's "target design" becomes the current graph. No API cost.
 - Pin the dated DeepSeek model version and log it per run (`docs/research/model-cutoff.md` recommendation 2; the alias was re-pointed on 2026-10-17).
 
 ## Not audited
+
+Batch 2 audited docs against `graph.py`/`state.py` only; code correctness, security and dependencies were not re-audited.
 
 Desk-research claims in `docs/research/` (they are marked as abstract-only; verifying them is SCOPE §9's job); the
 external services themselves (DeepSeek, SEC, yfinance); `pip-audit` was not run (no audit tool installed, and installing one would mutate the venv).
