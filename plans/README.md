@@ -13,7 +13,7 @@ honor its STOP conditions, and update your row when done.
 | [002](002-config-and-cache-hardening.md) | Settings read env at call time; atomic, versioned disk cache | P1 | S | 001 (soft) | DONE (branch `fix/config-cache`, 2020235; reviewed, not merged) |
 | [003](003-entropy-normalization-variant.md) | Entropy: add textbook sum-normalized variant, rerun spike #6, correct docs | P1 | M | 001 (soft) | DONE (branch `fix/entropy-variant`, a3f9133; reviewed, not merged; default variant still undecided) |
 | [004](004-mcdm-input-validation-and-review-overrides.md) | MCDM input validation; human-review override schema; checkpoint type allowlist | P2 | S | 003 | DONE (reviewed; spike output unchanged, strict checkpoint mode verified) |
-| [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | TODO |
+| [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | DONE (reviewed; 37 tests pass with 004 merged; library only, not wired into the graph) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
