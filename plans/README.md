@@ -15,10 +15,13 @@ honor its STOP conditions, and update your row when done.
 | [004](004-mcdm-input-validation-and-review-overrides.md) | MCDM input validation; human-review override schema; checkpoint type allowlist | P2 | S | 003 | DONE (reviewed; spike output unchanged, strict checkpoint mode verified) |
 | [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | DONE (reviewed; 37 tests pass with 004 merged; library only, not wired into the graph) |
 | [006](006-overview-accuracy-and-c4.md) | Overview: built-vs-planned status, fix false claims, C4 context/container diagrams, doc link test | P1 | S | PR #13 | DONE (branch `docs/overview-status`, 60bf819; reviewed after 1 revision: Mermaid label quoting; not merged) |
-| [007](007-langgraph-block-doc.md) | LangGraph block doc (state, nodes, interrupt/resume, target `Send` fan-out) with code-checked diagram | P1 | M | 006 | TODO |
-| [008](008-uncertainty-doc.md) | Uncertainty budget: every noise source, how measured, what is built | P1 | M | PR #13, 006 | TODO |
-| [009](009-decisions-d8-d15.md) | decisions.md D8–D15: rankers, scale, benefit-only, normalization, Kendall tau, perturbation, model, no ML | P1 | M | PR #13, 006 | TODO |
-| [010](010-interview-sheet.md) | Interview sheet: pitch, 11 sourced Q&As, what I'd change, glossary | P2 | S | 006–009 | TODO |
+| [007](007-langgraph-block-doc.md) | LangGraph block doc (state, nodes, interrupt/resume, target `Send` fan-out) with code-checked diagram | P1 | M | 006 | DONE (branch `docs/graph-block`, 1be8488; reviewed; merged into `integration/prototype`) |
+| [008](008-uncertainty-doc.md) | Uncertainty budget: every noise source, how measured, what is built | P1 | M | PR #13, 006 | DONE (branch `docs/uncertainty`, bb04a9d; reviewed; merged into `integration/prototype`) |
+| [009](009-decisions-d8-d15.md) | decisions.md D8–D15: rankers, scale, benefit-only, normalization, Kendall tau, perturbation, model, no ML | P1 | M | PR #13, 006 | DONE (branch `docs/decisions-d8-d15`, e07e028; reviewed; merged into `integration/prototype`) |
+| [010](010-interview-sheet.md) | Interview sheet: pitch, 11 sourced Q&As, what I'd change, glossary | P2 | S | 006–009, 013 | TODO |
+| [011](011-demo-pipeline-end-to-end.md) | Working prototype: `python -m maid.demo` runs the full graph on synthetic data with a stub scorer | P1 | L | 007 | TODO |
+| [012](012-streamlit-gui.md) | Streamlit GUI: pipeline, inputs, scores + overrides, weights, ranking, rank intervals | P1 | M | 011 | TODO |
+| [013](013-walkthrough.md) | Walkthrough: guided tour of what to run, read and open | P1 | S | 007–009, 011, 012 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -41,6 +44,12 @@ docs only (architecture diagrams, decisions with trade-offs, the noise argument)
 - 007, 008, 009 are independent of each other after 006.
 - 010 last: it only summarizes 006–009 and must add no new claims.
 - The C4 diagrams were folded into 006 (same file as the overview fixes) rather than a separate plan.
+
+### Batch 3 (011–013): prototype, GUI, walkthrough (2026-11-02)
+
+Owner asked to iterate autonomously to a working prototype + GUI + walkthrough. GitHub merges need the owner
+(auto-mode blocks agent merges), so reviewed work is stacked on the local branch `integration/prototype`; open one
+PR from it at the end. Order: 011 → 012 → 013 → 010 (interview sheet last, so it can mention the demo and GUI).
 
 ## Findings considered and rejected
 
