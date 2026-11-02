@@ -9,6 +9,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env   # add DEEPSEEK_API_KEY
 pytest
+ruff check .
 ```
 
 ## Layout
@@ -16,3 +17,6 @@ pytest
 - `src/maid/state.py`: shared state and score schema
 - `src/maid/cache.py`: on-disk cache for API/data calls
 - `src/maid/config.py`: settings from environment
+- `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
+- `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
+- `docs/architecture/`: architecture overview, per-block docs, design decisions
