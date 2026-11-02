@@ -25,6 +25,9 @@ python scripts/weight_stability.py # spike #6 simulation
 - `src/maid/config.py`: settings from environment
 - `src/maid/xbrl.py`: point-in-time XBRL extraction (pure)
 - `src/maid/sec.py`: cached SEC EDGAR client
+- `src/maid/universe.py`: universe selection rule (pure)
+- `src/maid/prices.py`: yfinance price layer (cached, local only)
+- `scripts/select_universe.py`: select the 15-company universe per sector
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
 - `docs/architecture/`: architecture overview, per-block docs, design decisions

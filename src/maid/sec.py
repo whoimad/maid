@@ -51,6 +51,10 @@ class SecClient:
         """Filing submissions metadata for a CIK."""
         return self._cached(f"https://data.sec.gov/submissions/CIK{cik10(cik)}.json")
 
+    def frame(self, taxonomy: str, tag: str, unit: str, period: str) -> dict:
+        """XBRL frame: one value per company for a tag and period."""
+        return self._cached(f"https://data.sec.gov/api/xbrl/frames/{taxonomy}/{tag}/{unit}/{period}.json")
+
     def tickers(self) -> dict:
         """Ticker/CIK table."""
         return self._cached("https://www.sec.gov/files/company_tickers_exchange.json")
