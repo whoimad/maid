@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-QUANT_CRITERIA = ["revenue_growth", "operating_margin", "fcf_margin", "rd_intensity"]  # all benefit-type
+QUANT_CRITERIA = ["revenue_growth", "net_margin", "fcf_margin", "rd_intensity"]  # all benefit-type
 QUAL_CRITERIA = ["strategy_clarity", "risk_disclosure"]  # LLM-scored, 1-9
 
 # criterion -> (low 1-3, mid 4-6, high 7-9) sentences
@@ -45,7 +45,7 @@ def demo_dataset(n: int = 10, seed: int = 0) -> DemoDataset:
     quant = {c: {} for c in companies}
     for crit, vals in [
         ("revenue_growth", rng.normal(0.10, 0.08, n)),
-        ("operating_margin", rng.normal(0.18, 0.08, n)),
+        ("net_margin", rng.normal(0.18, 0.08, n)),
         ("fcf_margin", rng.normal(0.15, 0.07, n)),
         ("rd_intensity", rng.uniform(0.03, 0.25, n)),
     ]:

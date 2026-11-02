@@ -32,7 +32,7 @@ def test_restatement_excluded():
 
 def test_margins():
     v = tech_criteria(F, "2025-03-31")["values"]
-    assert v["operating_margin"] == pytest.approx(0.2)
+    assert v["net_margin"] == pytest.approx(0.2)
     assert v["fcf_margin"] == pytest.approx(0.25)
     assert v["rd_intensity"] == pytest.approx(0.15)
 
@@ -49,8 +49,8 @@ def test_tag_fallback():
 
 def test_missing_tag_raises():
     f = copy.deepcopy(F)
-    del f["facts"]["us-gaap"]["OperatingIncomeLoss"]
-    with pytest.raises(ValueError, match="OperatingIncomeLoss"):
+    del f["facts"]["us-gaap"]["NetIncomeLoss"]
+    with pytest.raises(ValueError, match="NetIncomeLoss"):
         tech_criteria(f, "2025-03-31")
 
 

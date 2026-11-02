@@ -97,3 +97,9 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Why:** a 10-K is public 1-3 months after its fiscal year ends, so on 2024-12-31 December year-end companies had not filed FY2024. On 2025-03-31 every company's latest full year is public. A filing-date rule works for any company without per-company code. SIC codes are free and deterministic. The details are in [data.md](data.md).
 - **Cost:** fiscal period ends still differ by up to ~9 months across companies; the model has seen even more post-decision text (already assumed, D3/D14); SIC puts Alphabet and Meta in tech but not Amazon or Visa.
 - **Revisit if:** the bank sector needs a different date, or SIC yields an implausible universe.
+
+## D18. Tech profitability criterion: net margin, not operating margin
+- **Alternatives:** operating margin with a per-company fallback for IBM; pre-tax margin; drop IBM and take #16.
+- **Why:** simplest rule that treats every company the same. `NetIncomeLoss` is the only income tag all 15 tech companies report in their point-in-time 10-K: IBM has no `OperatingIncomeLoss` and Oracle has no pre-tax income tag. Dropping IBM would break the D17 selection rule.
+- **Cost:** net income includes taxes, interest and one-off items, so it is noisier than operating income as a measure of core profitability.
+- **Revisit if:** a different universe makes operating income available for every company.

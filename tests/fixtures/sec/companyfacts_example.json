@@ -89,7 +89,7 @@
      ]
     }
    },
-   "OperatingIncomeLoss": {
+   "NetIncomeLoss": {
     "units": {
      "USD": [
       {
