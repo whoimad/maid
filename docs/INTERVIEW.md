@@ -80,8 +80,7 @@ checked with the t-approximation). The backtest itself is not built. See
 [uncertainty.md](architecture/uncertainty.md) and [D15](architecture/decisions.md).
 
 ### 7. What is a rank interval and how is it computed?
-It is the 5th to 95th percentile (90%) of the ranks a company gets across many draws of the weights, with the original
-matrix X ranked each time. There are three sources, reported separately: bootstrap resamples of the companies (weight
+It is the 5th to 95th percentile (90%) of the ranks a company gets across many random draws (of the weights, or of the LLM scores). There are three sources, reported separately: bootstrap resamples of the companies (weight
 estimation noise) and Dirichlet draws around the point weights (weight-choice uncertainty, `concentration` is a
 placeholder of 100), and score noise (each LLM score re-drawn as the median of a resample of its K samples, weights
 recomputed; overridden scores held fixed). The bootstrap understates uncertainty at n around 12. See
