@@ -31,6 +31,7 @@ honor its STOP conditions, and update your row when done.
 | [020](020-universe-and-prices.md) | yfinance price layer; select and freeze 15-name tech and bank universes | P1 | L | 018, 019 | DONE (code; branch `feat/universe-prices`, 72e067e; reviewed; merged into `integration/prototype`). Selection NOT run: needs `SEC_USER_AGENT` in the owner's `.env`; the CSVs come from the owner's first run |
 | [021](021-parallel-sec-downloads.md) | Parallel SEC downloads (8 workers, shared 8 req/s cap) + retry on transient errors | P1 | S | 020 | DONE (branch `perf/parallel-sec`, befb30c; reviewed; merged) |
 | [022](022-universe-share-fallbacks-and-price-retry.md) | Fix universe: share-count fallbacks (Alphabet/Meta missing), Yahoo retries (NVIDIA dropped), Adobe R&D tag | P1 | S | 021 | DONE (branch `fix/universe-shares`, d7ae7b3; reviewed; merged; real runs: tech and banks pass sanity checks, CSVs committed) |
+| [023](023-real-data-quant-only-graph.md) | Graph runs on real SEC data: `source="sec"`, frozen tech universe, labels Company A..O, quant only, no LLM | P1 | M | 019–022, D18 | DONE (branch `feat/real-data-graph`, 65d9146; reviewed; merged; real run: 15 OK, CRITIC top 5 NVDA, META, AVGO, NOW, QCOM; weights sum 1) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -84,6 +85,16 @@ Order: 018 → 019 → 020 (strict). Not yet planned: wiring `source="sec"` into
 backtest; bank criteria spike (CET1/NPL not reliably in us-gaap XBRL); 10-K text extraction + anonymization +
 whitespace-normalized evidence check; real DeepSeek scorer.
 Assumption to confirm with the owner: sectors by SIC code (puts Alphabet/Meta in tech, not Amazon/Visa; GS/MS not banks).
+
+### Batch 7 (023): real data into the graph (2026-11-02, at `1bb3b67`)
+
+Owner asked to keep things "as simple as possible". IBM has no `OperatingIncomeLoss`, so `operating_margin` became
+`net_margin` for everyone (D18, commit `42c3383`). Plan 023 wires the frozen tech universe into `ingest()` behind
+`settings["source"]`, quantitative only. That is also the SCOPE §6 quant-only baseline. The advisor checked it in a
+scratch run on cached data: all 15 rows, three weighting schemes, `cell_samples={}` gives zero-width score-noise.
+Design choices: labels in alphabetical ticker order (so "Company A" does not mean largest); `human_review` skips the
+interrupt when there are no LLM scores; the label -> ticker map lives only in state key `tickers`; the GUI stays on
+demo data. Next, not yet planned: backtest; 10-K text; DeepSeek scorer; bank criteria spike.
 
 ## Findings considered and rejected
 
