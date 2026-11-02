@@ -4,13 +4,13 @@ from datetime import date
 REVENUE = ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet"]
 TAGS = {
     "revenue": REVENUE,
-    "operating_income": ["OperatingIncomeLoss"],
+    "net_income": ["NetIncomeLoss"],
     "operating_cash_flow": ["NetCashProvidedByUsedInOperatingActivities"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
     "rd": ["ResearchAndDevelopmentExpense", "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
            "ResearchAndDevelopmentExpenseSoftwareExcludingAcquiredInProcessCost"],
 }
-TECH_CRITERIA = ["revenue_growth", "operating_margin", "fcf_margin", "rd_intensity"]  # same names as demo_data.QUANT_CRITERIA
+TECH_CRITERIA = ["revenue_growth", "net_margin", "fcf_margin", "rd_intensity"]  # same names as demo_data.QUANT_CRITERIA
 
 
 def _usd(facts, tag) -> list[dict]:
@@ -73,6 +73,6 @@ def tech_criteria(facts, decision_date) -> dict:
         raise ValueError(f"non-positive revenue in {accn}: {facts.get('entityName')}")
     v = {k: x["value"] for k, x in got.items()}
     return {"accn": accn, "filed": filed, "period_end": end,
-            "values": {"revenue_growth": rev / rev0 - 1, "operating_margin": v["operating_income"] / rev,
+            "values": {"revenue_growth": rev / rev0 - 1, "net_margin": v["net_income"] / rev,
                        "fcf_margin": (v["operating_cash_flow"] - v["capex"]) / rev, "rd_intensity": v["rd"] / rev},
             "tags": {k: x["tag"] for k, x in got.items()}}

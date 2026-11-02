@@ -47,7 +47,14 @@ This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py
 
 ### Frozen universes
 
-Not yet selected: run `python scripts/select_universe.py tech --write` and `... banks --write` with SEC_USER_AGENT set.
+Selected by `scripts/select_universe.py <sector> --write` on 2025-03-31 market caps, ranked by market cap:
+
+| Sector | Companies |
+|---|---|
+| Tech | AAPL, MSFT, NVDA, GOOGL, META, AVGO, ORCL, CRM, CSCO, IBM, PLTR, INTU, QCOM, AMD, NOW |
+| Banks | JPM, BAC, WFC, C, PNC, COF, USB, BNY, TFC, MTB, FCNCA, FITB, STT, HBAN, RF |
+
+- 15th place in tech is close: NOW 164.0bn vs TXN 163.6bn and ADBE 163.5bn. Small share-count or price differences could swap it; the rule is applied as written.
 
 ## Quantitative criteria (tech)
 
@@ -56,7 +63,7 @@ All are benefit-type (higher is better). The tag lists are fallbacks: the first 
 | Criterion | Formula | XBRL tags (us-gaap, in fallback order) |
 |---|---|---|
 | `revenue_growth` | Rev(FY) / Rev(FY-1) - 1 | Revenue: `RevenueFromContractWithCustomerExcludingAssessedTax`, `Revenues`, `SalesRevenueNet` |
-| `operating_margin` | OperatingIncome / Rev | `OperatingIncomeLoss` |
+| `net_margin` | NetIncome / Rev | `NetIncomeLoss` (the only income tag all 15 tech companies report: IBM has no `OperatingIncomeLoss`, Oracle no pre-tax income tag) |
 | `fcf_margin` | (OperatingCashFlow - Capex) / Rev | `NetCashProvidedByUsedInOperatingActivities`; capex: `PaymentsToAcquirePropertyPlantAndEquipment`, `PaymentsToAcquireProductiveAssets` |
 | `rd_intensity` | R&D / Rev | `ResearchAndDevelopmentExpense`, `ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`, `ResearchAndDevelopmentExpenseSoftwareExcludingAcquiredInProcessCost` |
 

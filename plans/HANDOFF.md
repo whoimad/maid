@@ -45,9 +45,13 @@ Real runs (with the owner's `.env`):
     15th place is close: NOW 164.0bn vs TXN 163.6bn and ADBE 163.5bn.
   - Banks: JPM, BAC, WFC, C, PNC, COF, USB, BNY, TFC, MTB, FCNCA, FITB, STT, HBAN, RF.
   - Both passed their sanity checks (giants in; AMZN/TSLA/V/MA and GS/MS out).
-- Tests: 104 pass, ruff clean (on `integration/prototype`, HEAD `e0e7dda` + this file).
+- Tests: 100 pass (1 skipped), ruff clean (on `integration/prototype`, HEAD `e0e7dda` + this file).
 
 ## Failing or unfinished
+
+**Update (same day):** items 1, 2 and 4 are done (D18). Owner said "keep it as simple as possible": `operating_margin`
+became `net_margin` (`NetIncomeLoss`, the only income tag all 15 report). data.md frozen tables filled. `fetch_sec.py`
+on all 15 tech tickers: 15 OK. Next step is "Wire real data into the graph".
 
 1. **IBM has no `OperatingIncomeLoss` in XBRL.** `tech_criteria` raises for IBM, so the `operating_margin` cell is
    missing. **This is an owner decision**: use a different income measure for everyone, a per-company fallback
