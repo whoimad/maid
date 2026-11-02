@@ -13,9 +13,10 @@ about subsequent performance?
 Every LLM score carries cited evidence and is reviewable by the human.
 
 ## 3. Time frame (look-ahead control)
-- Decision date: **2024-12-31**. Agents see only information available on or before this date
-  (FY2024 10-K filings, prices up to the date).
-- Evaluation window: calendar 2025.
+- Decision date: **2025-03-31**. Agents see only information available on or before this date
+  (latest 10-K filed on or before the date, prices up to the date; see
+  `architecture/data.md`).
+- Evaluation window: 2025-04-01 to 2026-03-31.
 - Company names are anonymized (Company A, B, …) in scoring prompts to reduce memorized knowledge.
 - DeepSeek publishes no knowledge cutoff, so the cutoff is likely later than the decision date
   (see `docs/research/model-cutoff.md`). Decision: pin one model version (`deepseek-flash`),
@@ -23,9 +24,9 @@ Every LLM score carries cited evidence and is reviewable by the human.
   once its availability and cutoff are verified.
 
 ## 4. Universe
-- Phase 1: US **technology** sector, 10–15 companies. Phase 2: US **banks**, 10–15 companies.
+- Phase 1: US **technology** sector, 15 companies. Phase 2: US **banks**, 15 companies.
   Phases use different criteria sets (sector-specific ratios), same pipeline.
-- Selection rule: N largest by market cap within the sector at 2024-12-31, list frozen and committed.
+- Selection rule: N largest by market cap within the sector at the decision date (SIC-defined sector; see architecture/data.md), list frozen and committed.
 - Known limitation: large-cap selection has mild survivorship/winner bias; documented, not fixed.
 
 ## 5. Pipeline (LangGraph)
@@ -41,8 +42,8 @@ Every LLM score carries cited evidence and is reviewable by the human.
 7. Report: summary of ranking, evidence, and caveats; human reviews.
 
 ## 6. Evaluation
-- Backtest: Spearman correlation of ranks with 2025 total return and a risk-adjusted measure.
-  Reported as correlation, not "accuracy"; with 10–15 names it is noisy.
+- Backtest: Spearman correlation of ranks with total return over the evaluation window and a risk-adjusted measure.
+  Reported as correlation, not "accuracy"; with 15 names it is noisy.
 - Method agreement: Spearman/Kendall between TOPSIS, PROMETHEE/VIKOR, and weighting schemes.
 - LLM stability: score variance across K repeated runs.
 - Ablation: quantitative-only vs. quantitative + LLM-derived criteria.
@@ -62,7 +63,7 @@ human-set weights (AHP) in this version.
 ## 9. Open questions / spikes
 - [ ] Verify the older-model ablation candidate (e.g. DeepSeek-V3-0324, Qwen2.5-72B): availability, price, cutoff
 - [ ] Verify key claims in `docs/research/` against full papers (agents read abstracts only)
-- [ ] Final criteria list for tech (quantitative vs. qualitative split) and rubric drafts
+- [ ] Final criteria list for tech (quantitative vs. qualitative split) and rubric drafts (quantitative part: see architecture/data.md)
 - [ ] Criteria list for banks (e.g. CET1, NIM, efficiency ratio, NPL ratio instead of leverage/FCF)
 - [ ] Risk-adjusted metric definition for the backtest
 - [ ] Entropy vs. CRITIC behavior on only ~12 alternatives (small-sample weight stability)

@@ -8,15 +8,15 @@ files in this folder; the reasoning behind each choice is in [decisions.md](deci
 
 | Block | Code | Status |
 |---|---|---|
-| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` loads the `demo_data.py` synthetic dataset | demo implemented (synthetic dataset); real SEC/yfinance ingest planned |
+| Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` loads the `demo_data.py` synthetic dataset | demo implemented (synthetic dataset); real SEC/yfinance ingest planned; spec: [data.md](data.md) |
 | Disk cache | `cache.py` `DiskCache` (sha256 keys; `llm_key(model, prompt_version, ...)`) | implemented, not yet used by any node |
-| Config | `config.py` `Settings`: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` (default `deepseek-flash`), `DECISION_DATE` (default 2024-12-31), `MAID_CACHE_DIR` (default `data/cache`) | implemented |
+| Config | `config.py` `Settings`: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` (default `deepseek-flash`), `DECISION_DATE` (default 2025-03-31), `MAID_CACHE_DIR` (default `data/cache`) | implemented |
 | Qualitative scorer agents | `graph.py` `score_qualitative()` uses `scoring.py` `StubScorer`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub scorer implemented (deterministic, K samples, evidence check); DeepSeek scorer planned |
 | Human checkpoint | `graph.py` `human_review()` calls `interrupt(...)`; `parse_overrides()` validates the resume payload (`ScoreOverride`, reason mandatory, unknown company/criterion rejected) | implemented; overrides applied in `mcdm` |
 | MCDM engine | `mcdm/weights.py`, `mcdm/ranking.py` (entropy, CRITIC, equal; TOPSIS, SAW) | implemented and wired (node `mcdm`) |
 | Robustness | `mcdm/robustness.py` (bootstrap, Dirichlet and score-noise rank intervals) | implemented and wired |
 | Report | `graph.py` `report()` builds a Markdown report from state | implemented (Markdown) |
-| Backtest vs 2025 | none | planned |
+| Backtest (2025-04 to 2026-03) | none | planned |
 | Checkpointer | `build_graph()` compiles with `MemorySaver` (in-process memory) | implemented; does NOT survive a process restart |
 
 Diagrams in sections 2-4 show the target design; the table above is the source of truth for what runs today.
@@ -87,7 +87,7 @@ flowchart LR
     Q --> M
     M --> R[Robustness<br/>bootstrap / Monte Carlo]
     R --> O[Report<br/>rank intervals + caveats]
-    O --> E[Backtest vs 2025 returns]
+    O --> E[Backtest (2025-04 to 2026-03)]
 ```
 
 Quantitative criteria bypass the LLM entirely: numbers come from XBRL, which removes a whole class of
@@ -98,12 +98,12 @@ hallucination risk. Only genuinely textual criteria (e.g. strategy quality, risk
 ```mermaid
 flowchart LR
     subgraph before[" Information the system may use "]
-      D1[FY2024 10-K filings]
-      D2[Prices up to 2024-12-31]
+      D1[Latest 10-K filed by 2025-03-31]
+      D2[Prices up to 2025-03-31]
     end
-    X((Decision date<br/>2024-12-31))
+    X((Decision date<br/>2025-03-31))
     subgraph after[" Evaluation only "]
-      E1[2025 returns]
+      E1[Returns 2025-04-01 to 2026-03-31]
     end
     before --> X --> after
 ```
@@ -151,5 +151,6 @@ With about 12 companies the backtest is noisy; the project reports correlations 
 - [graph.md](graph.md): LangGraph pipeline, state, interrupt/resume (skeleton implemented, ingest and scoring are stubs; mcdm and robustness nodes are real)
 - [mcdm.md](mcdm.md): weights and ranking (implemented)
 - [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (implemented and wired into the graph)
+- [data.md](data.md): real-data spec: sources, point-in-time 10-K rule, universe, quantitative criteria (planned)
 - [uncertainty.md](uncertainty.md): every noise source, how it is measured, what is built
 - Ingest, scorer agents, human checkpoint, report: documented as each is built

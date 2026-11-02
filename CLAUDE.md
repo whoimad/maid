@@ -30,8 +30,9 @@ python scripts/weight_stability.py # spike #6 simulation
 ## Rules (non-negotiable)
 - **LLMs never rank.** Agents extract and score; a deterministic MCDM engine computes weights and
   ranks. Every LLM score carries cited evidence and is reviewable by the human. (SCOPE section 2)
-- Decision date is 2024-12-31: agents see only information available on or before it. Company names
+- Decision date is 2025-03-31 (D17): agents see only information available on or before it. Company names
   are anonymized ("Company A", ...) in scoring prompts. (SCOPE section 3)
+- Downloaded/derived real data (SEC, yfinance) stays local: only `data/universe/*.csv` is committed.
 - The MCDM engine (`src/maid/mcdm/`) is pure functions: no LLM, no I/O, everything unit tested.
   All criteria must be benefit-type (higher is better).
 - Cache everything on disk (D7); cache keys must include model and prompt version.
@@ -51,5 +52,6 @@ python scripts/weight_stability.py # spike #6 simulation
 ## Docs to read before changing X
 - `docs/architecture/decisions.md` (D1-D7) before changing any design.
 - `docs/architecture/mcdm.md` before touching `src/maid/mcdm/`.
+- `docs/architecture/data.md` before touching ingest, XBRL or prices.
 - `docs/research/README.md`: research notes were made from abstracts only; check claims marked
   UNVERIFIED before relying on them.

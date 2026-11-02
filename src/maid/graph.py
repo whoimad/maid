@@ -144,7 +144,7 @@ def report(state: PipelineState) -> dict:
     tau = state["method_agreement"]["kendall_tau_topsis_saw"]
     lines = [
         "# MAID demo report", "",
-        "> **Synthetic demo data**: invented companies, not real ones. Decision date 2024-12-31.", "",
+        "> **Synthetic demo data**: invented companies, not real ones. Decision date 2025-03-31.", "",
         f"Settings: weighting={st['weighting']}, k={st['k']}, seed={st['seed']}, "
         f"n_draws={st['n_draws']}, concentration={st['concentration']}", "",
         "## Ranking (by TOPSIS)", "",

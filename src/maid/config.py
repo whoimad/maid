@@ -15,7 +15,7 @@ class Settings:
         default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
     )
     model: str = field(default_factory=lambda: os.getenv("DEEPSEEK_MODEL", "deepseek-flash"))
-    decision_date: str = field(default_factory=lambda: os.getenv("DECISION_DATE", "2024-12-31"))
+    decision_date: str = field(default_factory=lambda: os.getenv("DECISION_DATE", "2025-03-31"))
     cache_dir: Path = field(default_factory=lambda: Path(os.getenv("MAID_CACHE_DIR", "data/cache")))
 
 

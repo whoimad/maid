@@ -11,7 +11,7 @@ LangGraph graph: ingest, scorer agents, a human-review interrupt, MCDM, robustne
 ([graph.md](architecture/graph.md)). The hard part is noise: at n=12, weight noise alone moves rankings (spike #6,
 Kendall tau roughly 0.62 to 0.89, synthetic data only), so the report gives rank intervals and TOPSIS-vs-SAW
 agreement instead of a single leaderboard ([uncertainty.md](architecture/uncertainty.md)). Look-ahead is controlled
-with a decision date of 2024-12-31 and anonymized company names; the known limitation is that the model's training
+with a decision date of 2025-03-31 and anonymized company names; the known limitation is that the model's training
 cutoff is unpublished and likely later ([D3](architecture/decisions.md)). Honest status: the full graph runs end to
 end on a synthetic demo dataset with a deterministic stub scorer (`python -m maid.demo`, and the Streamlit GUI via
 `streamlit run app/streamlit_app.py`, see [README.md](../README.md) and [WALKTHROUGH.md](WALKTHROUGH.md)). The MCDM
@@ -46,8 +46,8 @@ coarse scores, so the rubric design carries a lot of weight. See [D1](architectu
 [overview.md section 1](architecture/overview.md).
 
 ### 2. How do you prevent look-ahead bias, and what can't you prevent?
-Agents see only information available on or before the decision date, 2024-12-31, and company names are anonymized
-("Company A") in scoring prompts; 2025 returns are used only afterwards for grading. What cannot be prevented: DeepSeek
+Agents see only information available on or before the decision date, 2025-03-31, and company names are anonymized
+("Company A") in scoring prompts; returns from 2025-04 to 2026-03 are used only afterwards for grading. What cannot be prevented: DeepSeek
 publishes no knowledge cutoff, so it is likely later than the decision date and the model may recall later text.
 This is stated as a limitation, with a look-ahead probe and an older-model ablation planned, not built. See
 [D3](architecture/decisions.md) and [SCOPE.md section 3](SCOPE.md).
@@ -74,7 +74,7 @@ less stable in the spike. A second method family (PROMETHEE II, then VIKOR) is p
 
 ### 6. With 12 companies, can the results mean anything?
 Only with care: weight noise alone moves rankings (Kendall tau roughly 0.62 to 0.89 at n=12 in the synthetic spike), so
-the system reports rank intervals and method agreement, never a single leaderboard. The 2025 backtest is a sanity check:
+the system reports rank intervals and method agreement, never a single leaderboard. The backtest is a sanity check:
 at n=12 a Spearman correlation must exceed about 0.58 in absolute value to reach p<0.05 (from an abstract-only note,
 checked with the t-approximation). The backtest itself is not built. See
 [uncertainty.md](architecture/uncertainty.md) and [D15](architecture/decisions.md).
