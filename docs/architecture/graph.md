@@ -23,7 +23,7 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 
 | Node | Reads | Writes | Status |
 |---|---|---|---|
-| `ingest` | `companies`, `settings` | `companies`, `quantitative`, `filings`, `criteria`, `settings` | demo implemented (synthetic dataset); real ingest planned |
+| `ingest` | `companies`, `settings` | `companies`, `quantitative`, `filings`, `criteria`, `settings` | demo implemented (synthetic dataset); real SEC tech universe with source="sec" (quantitative only, no LLM) |
 | `score_qualitative` | `companies`, `filings`, `settings` | `qualitative`, `score_samples`, `score_noise` | stub scorer implemented; DeepSeek scorer planned |
 | `human_review` | `qualitative` | `overrides` | implemented (pauses, validates overrides) |
 | `mcdm` | `qualitative`, `overrides`, `quantitative`, `criteria`, `settings` | `matrix`, `weights`, `scores`, `ranking`, `method_agreement` | implemented; overrides applied here |
@@ -33,6 +33,7 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 `PipelineState` keys (no key has a reducer, so each write replaces the key's value):
 
 - `companies`: anonymized labels, e.g. "Company A".
+- `tickers`: label -> ticker for real data, local only, never in prompts.
 - `quantitative`: company -> criterion -> value.
 - `qualitative`: list of `CriterionScore`, the LLM scores.
 - `overrides`: list of `ScoreOverride`, the human corrections.
