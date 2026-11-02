@@ -25,6 +25,7 @@ honor its STOP conditions, and update your row when done.
 | [014](014-settings-validation-and-evidence-check.md) | Validate settings at ingest (fail before review); evidence check raises instead of `assert` | P1 | S | 011 | DONE (branch `fix/settings-validation`, 2918d86; reviewed; merged into `integration/prototype`) |
 | [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | DONE (branch `docs/status-after-demo`, 8aeb36f; reviewed; also fixed overview.md:151 graph.md blurb; merged into `integration/prototype`) |
 | [016](016-doc-consistency-after-demo.md) | Docs consistent with the demo: robustness wired, overrides applied, full state keys, CLAUDE.md layout | P1 | S | 011–015 | DONE (same branch, c45ea81; reviewed) |
+| [017](017-score-noise-rank-intervals.md) | LLM score noise as a third rank interval (`score_noise`): engine, graph, report, GUI, docs, D16 | P1 | M | 005, 011, 012 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -59,6 +60,14 @@ PR from it at the end. Order: 011 → 012 → 013 → 010 (interview sheet last,
 Audit of `graph.py`, `demo.py`, `scoring.py`, `matrix.py`, `demo_data.py` after the demo pipeline landed. 48 tests pass,
 ruff clean. Order: 014, 015 and 012 in parallel (disjoint files), then 013, then 010.
 
+### Batch 5 (017): score noise into rank intervals (2026-11-02, at `c31034f`)
+
+Owner asked to plan the "propagate score noise" direction item and keep going until the project is done. Design
+decided in the plan (recorded as D16): bootstrap the median of each cell's K samples, recompute weights per draw,
+hold human overrides fixed, report as a separate third source drawn after bootstrap/Dirichlet so their results stay
+bit-identical. Rejected: one sample per cell (overstates the noise of a median of K); normal around the median
+(assumes a shape, needs rounding/clipping). Scratch prototype: mean interval width 0 at k=1, 1.6 at k=5.
+
 ## Findings considered and rejected
 
 - Stub scorer evidence can come from a different band than the aggregated score (latent 3 -> median 4): demo realism only; the human checkpoint is where that mismatch gets caught.
@@ -80,9 +89,6 @@ ruff clean. Order: 014, 015 and 012 in parallel (disjoint files), then 013, then
 - Build the LangGraph fan-out for real (`Send` per company x criterion, reducer, SQLite checkpointer) with stub scorers, so plan 007's "target design" becomes the current graph. No API cost.
 - Pin the dated DeepSeek model version and log it per run (`docs/research/model-cutoff.md` recommendation 2; the alias was re-pointed on 2026-10-17).
 
-- Propagate score noise (the K samples in `score_samples`) into rank intervals as a third source, beside bootstrap and
-  Dirichlet. This is the core of the noise argument, and the data is already in state. Needs a design decision
-  (resample one of the K samples per cell vs. a normal around the median).
 
 ## Not audited
 
