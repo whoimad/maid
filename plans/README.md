@@ -19,7 +19,7 @@ honor its STOP conditions, and update your row when done.
 | [008](008-uncertainty-doc.md) | Uncertainty budget: every noise source, how measured, what is built | P1 | M | PR #13, 006 | DONE (branch `docs/uncertainty`, bb04a9d; reviewed; merged into `integration/prototype`) |
 | [009](009-decisions-d8-d15.md) | decisions.md D8–D15: rankers, scale, benefit-only, normalization, Kendall tau, perturbation, model, no ML | P1 | M | PR #13, 006 | DONE (branch `docs/decisions-d8-d15`, e07e028; reviewed; merged into `integration/prototype`) |
 | [010](010-interview-sheet.md) | Interview sheet: pitch, 11 sourced Q&As, what I'd change, glossary | P2 | S | 006–009, 013 | TODO |
-| [011](011-demo-pipeline-end-to-end.md) | Working prototype: `python -m maid.demo` runs the full graph on synthetic data with a stub scorer | P1 | L | 007 | TODO |
+| [011](011-demo-pipeline-end-to-end.md) | Working prototype: `python -m maid.demo` runs the full graph on synthetic data with a stub scorer | P1 | L | 007 | DONE (branch `feat/demo-pipeline`, c1817eb; reviewed after 1 amendment: legacy graph tests now pass 2 companies, since real MCDM needs n >= 2) |
 | [012](012-streamlit-gui.md) | Streamlit GUI: pipeline, inputs, scores + overrides, weights, ranking, rank intervals | P1 | M | 011 | TODO |
 | [013](013-walkthrough.md) | Walkthrough: guided tour of what to run, read and open | P1 | S | 007–009, 011, 012 | TODO |
 
