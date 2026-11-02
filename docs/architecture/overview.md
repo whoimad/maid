@@ -81,7 +81,7 @@ flowchart LR
     A[SEC EDGAR<br/>10-K text + XBRL] --> I[Ingest]
     B[yfinance<br/>prices] --> I
     I -->|ratios from XBRL| Q[Quantitative criteria]
-    I -->|filing text, names anonymized| S["Qualitative scorer agents<br/>one per company x criterion, K samples (planned)"]
+    I -->|filing text, names anonymized| S["Qualitative scorer agents<br/>one per company x criterion, K samples (stub today)"]
     S --> H{{Human checkpoint<br/>review scores + evidence}}
     H --> M[MCDM engine<br/>weights + ranking]
     Q --> M
@@ -131,7 +131,7 @@ The interrupt sits after the join, not inside parallel branches, so the human re
 Today the graph uses `MemorySaver`, which keeps checkpoints in process memory: a paused run survives
 within one Python process, but a restart loses it. Resuming across restarts needs a persistent
 checkpointer (e.g. SQLite) and is planned. Today the graph is linear (no fan-out yet). Overrides are
-validated with a mandatory reason; applying them to the scores is not built yet.
+validated with a mandatory reason and applied to the scores in the mcdm node before the decision matrix is built.
 
 ## 5. Evaluation
 
@@ -148,7 +148,7 @@ With about 12 companies the backtest is noisy; the project reports correlations 
 "accuracy".
 
 ## Blocks
-- [graph.md](graph.md): LangGraph pipeline, state, interrupt/resume (skeleton implemented, nodes mostly stubs)
+- [graph.md](graph.md): LangGraph pipeline, state, interrupt/resume (skeleton implemented, ingest and scoring are stubs; mcdm and robustness nodes are real)
 - [mcdm.md](mcdm.md): weights and ranking (implemented)
 - [robustness.md](robustness.md): rank intervals via bootstrap and weight perturbation (library implemented, not yet wired into the graph)
 - [uncertainty.md](uncertainty.md): every noise source, how it is measured, what is built
