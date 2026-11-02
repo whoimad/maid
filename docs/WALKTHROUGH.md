@@ -74,7 +74,7 @@ Check: which pipeline nodes are drawn amber, and why? (Answer in `DEFAULT_STATUS
 ## Stop 1 — The question and the one rule (10 min)
 
 1. [SCOPE.md](SCOPE.md) sections 1 to 3: the research question (is a deterministic MCDM ranking stable, robust,
-   informative?), the core principle, and the time frame (decision date 2024-12-31, anonymized company names).
+   informative?), the core principle, and the time frame (decision date 2025-03-31, anonymized company names).
 2. [overview.md](architecture/overview.md) section 1, "The one idea to remember": the table of what LLM agents
    do versus what the MCDM engine does.
 3. [decisions.md](architecture/decisions.md) D1, "LLMs score, MCDM ranks", with its alternatives and cost.
@@ -230,7 +230,7 @@ status table), and the honest limits ([uncertainty.md](architecture/uncertainty.
 | Concept | Where in code | Where explained |
 |---|---|---|
 | Anonymized company names | `demo_dataset` in [demo_data.py](../src/maid/demo_data.py) ("Company A", ...) | [SCOPE.md](SCOPE.md) section 3; D3 |
-| Decision date 2024-12-31 | `decision_date` (env `DECISION_DATE`) in [config.py](../src/maid/config.py) | SCOPE section 3; D3; overview section 3 |
+| Decision date 2025-03-31 | `decision_date` (env `DECISION_DATE`) in [config.py](../src/maid/config.py) | SCOPE section 3; D3; overview section 3 |
 | Evidence quote | `CriterionScore.evidence` in [state.py](../src/maid/state.py); `evidence_is_quoted` in [scoring.py](../src/maid/scoring.py) | [graph.md](architecture/graph.md); D9 |
 | K samples | `StubScorer.score`, `aggregate` in scoring.py | D9; [uncertainty.md](architecture/uncertainty.md) |
 | Human override | `parse_overrides`, `human_review` in [graph.py](../src/maid/graph.py); `apply_overrides` in [matrix.py](../src/maid/matrix.py) | graph.md "Human-in-the-loop" |

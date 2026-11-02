@@ -12,11 +12,12 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Why:** ratios do not mean the same thing across sectors (bank leverage vs tech cash flow).
 - **Cost:** two criteria sets to design; no cross-sector comparison.
 
-## D3. Decision date 2024-12-31, backtest on 2025, anonymized company names
+## D3. Decision date 2025-03-31, backtest 2025-04-01 to 2026-03-31, anonymized company names
 - **Alternatives:** only trust a model with an earlier cutoff; no look-ahead control.
 - **Why:** gives a real out-of-sample test. DeepSeek publishes no cutoff, so it is likely later than the decision date; we cannot rely on the model's ignorance.
 - **Mitigation:** anonymize names, keep numbers, probe for recalled post-date facts, ablate with an older open-weight model.
 - **Cost:** anonymization may reduce scoring quality; the leak cannot be fully excluded and is stated as a limitation.
+- **Changed 2026-11-02:** was 2024-12-31; moved by D17.
 
 ## D4. Data-driven weights (entropy, CRITIC), no AHP in v1
 - **Alternatives:** AHP with my own pairwise judgments; fixed equal weights.
@@ -76,7 +77,7 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 ## D14. Model: DeepSeek (`deepseek-flash`) for the pipeline
 - **Alternatives:** Claude or GPT models; an older open-weight model with an earlier cutoff.
 - **Why:** budget (SCOPE §8); cheapest option with JSON output, tool calls and a 1M context ([model-cutoff.md](../research/model-cutoff.md) §5).
-- **Cost:** no published knowledge cutoff, likely after the 2024-12-31 decision date (look-ahead risk, D3); the alias was re-pointed on 2026-10-17, so the dated version must be pinned and logged per run (not done yet).
+- **Cost:** no published knowledge cutoff, likely after the 2025-03-31 decision date (look-ahead risk, D3); the alias was re-pointed on 2026-10-17, so the dated version must be pinned and logged per run (not done yet).
 - **Status:** decided for v1; older-model ablation OPEN (SCOPE §9).
 
 ## D15. No trained predictive (ML) model
@@ -90,3 +91,9 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Cost:** small K understates the spread and K=1 gives a zero-width interval (no information, not certainty); human-overridden cells are held fixed; quantitative criteria are treated as noise-free; cells are resampled independently.
 - **Status:** implemented and wired into the graph's `robustness` node (demo); K OPEN (D9).
 - **Revisit if:** real LLM samples turn out correlated across criteria of the same company (independent resampling would then understate the noise).
+
+## D17. Real data: point-in-time 10-K rule, decision date 2025-03-31, SIC sectors, 15 names
+- **Alternatives:** keep 2024-12-31 and use the latest 10-K filed by then (mixes FY2023 and FY2024 reports); hard-code each company's fiscal year end; GICS sectors; a hand-picked company list (owner rejected it as cherry-picking); letting an LLM pick the companies (not reproducible, and a selection is a ranking, which D1 reserves for deterministic code).
+- **Why:** a 10-K is public 1-3 months after its fiscal year ends, so on 2024-12-31 December year-end companies had not filed FY2024. On 2025-03-31 every company's latest full year is public. A filing-date rule works for any company without per-company code. SIC codes are free and deterministic. The details are in [data.md](data.md).
+- **Cost:** fiscal period ends still differ by up to ~9 months across companies; the model has seen even more post-decision text (already assumed, D3/D14); SIC puts Alphabet and Meta in tech but not Amazon or Visa.
+- **Revisit if:** the bank sector needs a different date, or SIC yields an implausible universe.
