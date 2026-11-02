@@ -5,6 +5,7 @@ Usage: python scripts/select_universe.py {tech,banks} [--date 2025-03-31] [--wri
 import argparse
 import csv
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from maid import sec
@@ -15,6 +16,7 @@ from maid.sec import SecClient, cik10
 from maid.universe import SECTORS, eligible_annual, in_sector, listed, shares_outstanding, top_n
 
 PRESCREEN = 40
+WORKERS = 8
 COLS = ["rank", "ticker", "cik", "name", "sic", "market_cap_usd", "shares", "shares_accn", "close", "price_date", "decision_date"]
 
 
@@ -37,24 +39,34 @@ def main() -> int:
         cands = listed(client.tickers())
         sic_cache = DiskCache(cache_dir / "sic")
         in_sec: dict[int, dict] = {}
-        for i, cik in enumerate(cands, 1):
-            def get(cik=cik):
+
+        def scan(cik):
+            def get():
                 s = sec._get_json(f"https://data.sec.gov/submissions/CIK{cik10(cik)}.json", client.user_agent)
                 return {"sic": s.get("sic", ""), "name": s.get("name", "")}
-            try:
-                info = sic_cache.get_or_compute(DiskCache.key("sic", cik), get)
-            except ValueError as e:
-                if "SEC_USER_AGENT" in str(e):
-                    raise
-                print(f"warning: submissions failed for CIK {cik}: {e}", file=sys.stderr)
-                continue
-            except OSError as e:
-                print(f"warning: submissions failed for CIK {cik}: {e}", file=sys.stderr)
-                continue
-            if in_sector(info["sic"], a.sector):
-                in_sec[cik] = info
-            if i % 250 == 0:
-                print(f"SIC scan {i}/{len(cands)}, {len(in_sec)} in sector", file=sys.stderr)
+            return sic_cache.get_or_compute(DiskCache.key("sic", cik), get)
+
+        done = failed = 0
+        with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+            futs = {ex.submit(scan, cik): cik for cik in cands}
+            for f in as_completed(futs):
+                cik = futs[f]
+                done += 1
+                try:
+                    info = f.result()
+                except (ValueError, OSError) as e:
+                    if isinstance(e, ValueError) and "SEC_USER_AGENT" in str(e):
+                        ex.shutdown(wait=False, cancel_futures=True)
+                        raise
+                    print(f"warning: submissions failed for CIK {cik}: {e}", file=sys.stderr)
+                    failed += 1
+                    continue
+                if in_sector(info["sic"], a.sector):
+                    in_sec[cik] = info
+                if done % 250 == 0:
+                    print(f"SIC scan {done}/{len(cands)}, {len(in_sec)} in sector", file=sys.stderr)
+        in_sec = {cik: in_sec[cik] for cik in cands if cik in in_sec}
+        print(f"SIC scan done: {len(in_sec)} in sector, {failed} failed", file=sys.stderr)
 
         shares = frame_shares(client, "CY2025Q1I")
         for cik, v in frame_shares(client, "CY2024Q4I").items():

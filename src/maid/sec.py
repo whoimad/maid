@@ -1,28 +1,46 @@
 """SEC EDGAR fetches: User-Agent required, <= 8 requests/s, every response cached on disk (local only)."""
 import json
+import threading
 import time
+import urllib.error
 import urllib.request
 
 from maid.cache import DiskCache
 from maid.config import get_settings
 
-MIN_INTERVAL = 0.125  # seconds between network requests (SEC allows 10/s)
-_last = [0.0]
+MIN_INTERVAL = 0.125  # seconds between request starts, shared by all threads (SEC allows 10/s)
+RETRIES = 3
+_lock = threading.Lock()
+_next = [0.0]
+
+
+def _slot() -> None:
+    """Block until this thread may start a request (global cap of 1 / MIN_INTERVAL starts per second)."""
+    with _lock:
+        now = time.monotonic()
+        start = max(now, _next[0])
+        _next[0] = start + MIN_INTERVAL
+    if start > now:
+        time.sleep(start - now)
 
 
 def _get_json(url: str, user_agent: str) -> dict:
-    """GET a JSON URL with the SEC User-Agent, rate-limited."""
+    """GET a JSON URL with the SEC User-Agent; rate-limited across threads; retries transient network errors."""
     if not user_agent.strip():
         raise ValueError("SEC_USER_AGENT is not set (SEC requires a contact, e.g. 'MAID research you@example.com')")
-    wait = MIN_INTERVAL - (time.monotonic() - _last[0])
-    if wait > 0:
-        time.sleep(wait)
     req = urllib.request.Request(url, headers={"User-Agent": user_agent, "Accept-Encoding": "identity"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read())
-    finally:
-        _last[0] = time.monotonic()
+    for attempt in range(RETRIES):
+        _slot()
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 500, 502, 503, 504) or attempt == RETRIES - 1:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == RETRIES - 1:
+                raise
+        time.sleep(2 ** attempt)
 
 
 def cik10(cik) -> str:
