@@ -43,6 +43,8 @@ python scripts/weight_stability.py # spike #6 simulation
 ## Rules (non-negotiable)
 - **LLMs never rank.** Agents extract and score; a deterministic MCDM engine computes weights and
   ranks. Every LLM score carries cited evidence and is reviewable by the human. (SCOPE section 2)
+- **Local models only (D21).** No paid API. One local model (Ollama) fills the GPU, so agents run as sequential
+  jobs, never in parallel; the scorer refuses non-local servers.
 - Decision date is 2025-03-31 (D17): agents see only information available on or before it. Company names
   are anonymized ("Company A", ...) in scoring prompts. (SCOPE section 3)
 - Downloaded/derived real data (SEC, yfinance) stays local: only `data/universe/*.csv` is committed.

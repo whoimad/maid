@@ -7,23 +7,18 @@ from maid.config import get_settings
 
 
 def test_settings_read_env_at_call_time(monkeypatch):
-    monkeypatch.delenv("LLM_MODEL", raising=False)
-    monkeypatch.setenv("DEEPSEEK_MODEL", "m-test")
+    monkeypatch.setenv("LLM_MODEL", "m-test")
     assert get_settings().model == "m-test"
-    monkeypatch.setenv("DEEPSEEK_MODEL", "m-other")
+    monkeypatch.setenv("LLM_MODEL", "m-other")
     assert get_settings().model == "m-other"
 
 
-def test_llm_model_overrides_deepseek_model(monkeypatch):
-    monkeypatch.setenv("DEEPSEEK_MODEL", "m-deep")
-    monkeypatch.setenv("LLM_MODEL", "m-llm")
-    assert get_settings().model == "m-llm"
-
-
-def test_deepseek_model_used_without_llm_model(monkeypatch):
-    monkeypatch.setenv("DEEPSEEK_MODEL", "m-deep")
-    monkeypatch.delenv("LLM_MODEL", raising=False)
-    assert get_settings().model == "m-deep"
+def test_llm_defaults_are_local(monkeypatch):
+    for k in ("LLM_MODEL", "LLM_BASE_URL", "LLM_API_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    s = get_settings()
+    assert s.model == "qwen2.5-32k"
+    assert s.base_url == "http://localhost:11434/v1"
 
 
 def test_settings_cache_dir_is_path(monkeypatch, tmp_path):

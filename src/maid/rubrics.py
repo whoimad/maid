@@ -1,11 +1,11 @@
 """Scoring prompts: one rubric per qualitative criterion (1-9, quoted evidence). Bump PROMPT_VERSION on any change."""
 
-PROMPT_VERSION = "1"
+PROMPT_VERSION = "2"
 SYSTEM = (
     "You are a careful equity analyst. The company is anonymized as {label}; other names may also be replaced. "
     "Use only the excerpt below, never outside knowledge, and do not try to identify the company. "
-    "Score one criterion as an integer from 1 to 9 using the rubric. Quote, word for word, one passage of at most "
-    "300 characters from the excerpt that best supports the score. "
+    "Score one criterion as an integer from 1 to 9 using the rubric. Quote, word for word, a single sentence of at most "
+    "400 characters from the excerpt that best supports the score. "
     'Answer with a json object only: {{"score": <1-9>, "evidence": "<verbatim quote>", '
     '"reasoning": "<at most 60 words>"}}.'
 )

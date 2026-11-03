@@ -121,7 +121,7 @@ Check: which external connections in the C4 diagrams exist today? (None; they ar
    company/criterion and non-dict payloads are rejected; `test_graph_records_overrides_after_resume` does the
    resume; `test_checkpoint_serde_restores_state_models` covers the msgpack allowlist.
 6. The checkpointer is `MemorySaver` (last lines of `build_graph`): pause and resume work inside one process only.
-7. The `Send` fan-out section of graph.md is a target design, not code.
+7. The `Send` fan-out section of graph.md is a design that was dropped: agents run sequentially (D21).
 
 Check: why does `human_review` need to be idempotent? (graph.md: on resume the node re-runs from its start.)
 
@@ -138,10 +138,9 @@ Check: why does `human_review` need to be idempotent? (graph.md: on resume the n
      calls it for every score.
 3. What the real scorer will replace: `StubScorer`, and the synthetic filings from `ingest`. The schema in
    state.py, the K-samples-then-aggregate shape and the evidence check are the parts meant to stay (see
-   [uncertainty.md](architecture/uncertainty.md) on sampling noise and unsupported evidence). The real DeepSeek
-   scorer is planned, not built.
+   [uncertainty.md](architecture/uncertainty.md) on sampling noise and unsupported evidence). The real scorer (`llm.py`, a local model) is built but not yet wired into the graph.
 4. Decisions: [decisions.md](architecture/decisions.md) D9 (integer 1-9 with evidence, K samples; K and the
-   median-vs-mean rule are marked OPEN there) and D14 (model choice, `deepseek-flash`).
+   median-vs-mean rule are marked OPEN there) and D21 (local models only, sequential agents).
 5. [cache.py](../src/maid/cache.py): `DiskCache.llm_key` makes model and prompt version part of the key (D7). No
    node uses the cache yet (overview status table).
 

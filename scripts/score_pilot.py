@@ -1,7 +1,7 @@
 """Score the first N companies of a universe with the LLM scorer (K samples) and write a local review table.
 
 Usage: python scripts/score_pilot.py [--sector staples] [--n 10] [--k 5] [--out data/pilot]
-Needs SEC_USER_AGENT (cached 10-Ks) and an LLM endpoint (LLM_* or DEEPSEEK_* settings). Writes only under --out.
+Needs SEC_USER_AGENT (cached 10-Ks) and a local LLM server (LLM_* settings, default Ollama on localhost). Writes only under --out.
 """
 import argparse
 import json

@@ -11,12 +11,10 @@ LangGraph graph: ingest, scorer agents, a human-review interrupt, MCDM, robustne
 ([graph.md](architecture/graph.md)). The hard part is noise: at n=12, weight noise alone moves rankings (spike #6,
 Kendall tau roughly 0.62 to 0.89, synthetic data only), so the report gives rank intervals and TOPSIS-vs-SAW
 agreement instead of a single leaderboard ([uncertainty.md](architecture/uncertainty.md)). Look-ahead is controlled
-with a decision date of 2025-03-31 and anonymized company names; the known limitation is that the model's training
-cutoff is unpublished and likely later ([D3](architecture/decisions.md)). Honest status: the full graph runs end to
+with a decision date of 2025-03-31 and anonymized company names; the known limitation is that the scorer is a local Qwen2.5 7B released before the decision date, so the remaining risk is recognition ([D3](architecture/decisions.md)). Honest status: the full graph runs end to
 end on a synthetic demo dataset with a deterministic stub scorer (`python -m maid.demo`, and the Streamlit GUI via
 `streamlit run app/streamlit_app.py`, see [README.md](../README.md) and [WALKTHROUGH.md](WALKTHROUGH.md)). The MCDM
-engine, rank intervals, review interrupt and overrides are real and tested; real SEC/yfinance ingest, the DeepSeek
-scorer, fan-out and the backtest are planned, not built ([overview.md](architecture/overview.md), status table).
+engine, rank intervals, review interrupt and overrides are real and tested; real SEC ingest, the backtests and the local LLM scorer are built; wiring the scorer into the graph is next; there is no parallel fan-out (D21) ([overview.md](architecture/overview.md), status table).
 
 ## One picture
 
@@ -33,7 +31,7 @@ flowchart LR
     end
     C -->|planned| SEC[SEC EDGAR]
     C -->|planned| YF[yfinance]
-    C -->|planned| DS[DeepSeek API]
+    C -->|planned| DS[Local LLM<br/>Ollama, Qwen2.5 7B]
 ```
 
 ## Likely questions
@@ -47,9 +45,7 @@ coarse scores, so the rubric design carries a lot of weight. See [D1](architectu
 
 ### 2. How do you prevent look-ahead bias, and what can't you prevent?
 Agents see only information available on or before the decision date, 2025-03-31, and company names are anonymized
-("Company A") in scoring prompts; returns from 2025-04 to 2026-03 are used only afterwards for grading. What cannot be prevented: DeepSeek
-publishes no knowledge cutoff, so it is likely later than the decision date and the model may recall later text.
-This is stated as a limitation, with a look-ahead probe and an older-model ablation planned, not built. See
+("Company A") in scoring prompts; returns from 2025-04 to 2026-03 are used only afterwards for grading. The scorer is Qwen2.5 7B, released on 2024-09-19, so its training data predates the decision date and cannot contain evaluation-window events. What remains is recognition: the model may identify an anonymized company from older knowledge, which a recognition probe measures. See
 [D3](architecture/decisions.md) and [SCOPE.md section 3](SCOPE.md).
 
 ### 3. How do you know the LLM scores are any good?
@@ -89,7 +85,7 @@ recomputed; overridden scores held fixed). The bootstrap understates uncertainty
 ### 8. Why LangGraph instead of plain Python?
 Built-in checkpointing and `interrupt` give the human-in-the-loop step cheaply, and the graph mirrors the architecture
 diagram. Honest counterpoint: for today's linear pipeline, plain functions would be simpler; LangGraph pays off with the
-interrupt, the checkpointing and the planned fan-out (not built). The cost is a framework dependency. See
+interrupt and the checkpointing (the parallel fan-out was dropped, D21). The cost is a framework dependency. See
 [D6](architecture/decisions.md) and [graph.md](architecture/graph.md).
 
 ### 9. How does the human-in-the-loop work technically, and what happens if the process crashes mid-review?
@@ -110,6 +106,14 @@ the real ingest, the LLM scorer and the backtest are planned. See [README.md](..
 About 12 companies per sector-year is not a training set. The research question is whether LLM-made scores give a
 stable, robust, informative MCDM ranking, not return prediction, and trading advice is a non-goal. The cost is no learned
 weighting; the backtest only checks association. See [D15](architecture/decisions.md) and [SCOPE.md](SCOPE.md).
+
+### 12. Is it still multi-agent if the agents run one after another?
+Yes, conceptually. Each criterion agent has its own rubric, its own slice of the 10-K and its own output contract
+(score 1-9 with a verbatim quote), and the human review and the MCDM engine are separate steps. What is missing is
+parallel execution: the project uses local models only (no paid API), and one 7B model already fills the 8 GB laptop
+GPU, so the agents run as sequential jobs. The cost is time (about 10-20 s per call, hours for a full run), not
+design. With a hosted API the same agents could run in parallel (graph.md keeps that design). See
+[D21](architecture/decisions.md).
 
 ## What I would do differently
 

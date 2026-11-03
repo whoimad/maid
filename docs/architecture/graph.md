@@ -24,7 +24,7 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 | Node | Reads | Writes | Status |
 |---|---|---|---|
 | `ingest` | `companies`, `settings` | `companies`, `quantitative`, `filings`, `criteria`, `settings` | demo implemented (synthetic dataset); real SEC tech universe with source="sec" (quantitative only, no LLM) |
-| `score_qualitative` | `companies`, `filings`, `settings` | `qualitative`, `score_samples`, `score_noise` | stub scorer implemented; DeepSeek scorer planned |
+| `score_qualitative` | `companies`, `filings`, `settings` | `qualitative`, `score_samples`, `score_noise` | stub scorer implemented; local LLM scorer (`llm.py`, D21) not yet wired in |
 | `human_review` | `qualitative` | `overrides` | implemented (pauses, validates overrides) |
 | `mcdm` | `qualitative`, `overrides`, `quantitative`, `criteria`, `settings` | `matrix`, `weights`, `scores`, `ranking`, `method_agreement` | implemented; overrides applied here |
 | `robustness` | `matrix`, `settings`, `score_samples`, `overrides`, `companies`, `criteria` | `robustness` | implemented |
@@ -98,10 +98,9 @@ running process. It does not survive a restart: a paused run is lost if the proc
 Planned: a persistent checkpointer such as SQLite, so a paused review can be resumed in a later process.
 This is planned, not implemented.
 
-## Target design: parallel scoring with Send
+## Not used: parallel scoring with Send
 
-**Planned, not implemented.** Nothing in this section works today. Per `docs/research/llm-agents-finance.md`
-(section 4, item 5), the design is:
+**Dropped 2026-11-03 (D21).** One local 7B model fills the 8 GB GPU, so parallel branches would only queue. The criterion agents run as sequential jobs instead. This section is kept to show what parallel scoring would look like with a hosted API. Per `docs/research/llm-agents-finance.md` (section 4, item 5), that design is:
 
 ```mermaid
 flowchart LR
@@ -131,12 +130,11 @@ Decision D6 in [decisions.md](decisions.md): LangGraph was chosen over plain Pyt
 checkpointing and `interrupt` give human-in-the-loop cheaply, and the graph mirrors the architecture diagram.
 The cost is a framework dependency for a mostly linear pipeline.
 
-Honest counterpoint: for today's linear pipeline, plain functions would be simpler. LangGraph pays off with the
-interrupt, the checkpointing and the planned fan-out.
+Honest counterpoint: for today's linear pipeline, plain functions would be simpler. LangGraph pays off with the interrupt and the checkpointing (the parallel fan-out was dropped, D21).
 
 ## Known limitations
 
 - `MemorySaver` only: a restart loses a paused run.
-- No fan-out: scoring is a single node.
+- Sequential agents (D21): local models only, one model on an 8 GB GPU, so criterion agents run one after another, never in parallel.
 - Ingest and the scorer run on synthetic data (no real filings, no LLM).
 - The MCDM engine needs at least 2 companies.

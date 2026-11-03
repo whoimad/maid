@@ -10,8 +10,8 @@ files in this folder; the reasoning behind each choice is in [decisions.md](deci
 |---|---|---|
 | Ingest (SEC EDGAR, yfinance) | `graph.py` `ingest()` loads the `demo_data.py` synthetic dataset | demo implemented; real SEC tech ingest with source="sec" (quantitative only); prices/backtest planned; spec: [data.md](data.md) |
 | Disk cache | `cache.py` `DiskCache` (sha256 keys; `llm_key(model, prompt_version, ...)`) | implemented, not yet used by any node |
-| Config | `config.py` `Settings`: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` (default `deepseek-flash`), `DECISION_DATE` (default 2025-03-31), `MAID_CACHE_DIR` (default `data/cache`) | implemented |
-| Qualitative scorer agents | `graph.py` `score_qualitative()` uses `scoring.py` `StubScorer`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub scorer implemented (deterministic, K samples, evidence check); DeepSeek scorer planned |
+| Config | `config.py` `Settings`: `LLM_BASE_URL` (default `http://localhost:11434/v1`), `LLM_MODEL` (default `qwen2.5-32k`), `LLM_API_KEY`, `DECISION_DATE` (default 2025-03-31), `MAID_CACHE_DIR` (default `data/cache`), `SEC_USER_AGENT` | implemented |
+| Qualitative scorer agents | `graph.py` `score_qualitative()` uses `scoring.py` `StubScorer`; schema `CriterionScore` in `state.py` (score int 1-9 + evidence quote) | stub scorer implemented (deterministic, K samples, evidence check); local LLM scorer built (`llm.py`, Ollama, sequential jobs, D21); not yet wired into the graph |
 | Human checkpoint | `graph.py` `human_review()` calls `interrupt(...)`; `parse_overrides()` validates the resume payload (`ScoreOverride`, reason mandatory, unknown company/criterion rejected) | implemented; overrides applied in `mcdm` |
 | MCDM engine | `mcdm/weights.py`, `mcdm/ranking.py` (entropy, CRITIC, equal; TOPSIS, SAW) | implemented and wired (node `mcdm`) |
 | Robustness | `mcdm/robustness.py` (bootstrap, Dirichlet and score-noise rank intervals) | implemented and wired |
@@ -36,11 +36,10 @@ flowchart LR
     U([Analyst<br/>human reviewer]) -->|reviews/overrides scores, reads report| MAID[MAID]
     MAID -->|10-K text, XBRL facts - planned| SEC[SEC EDGAR]
     MAID -->|prices up to decision date - planned| YF[yfinance]
-    MAID -->|scoring prompts, anonymized - planned| DS[DeepSeek API]
+    MAID -->|scoring prompts, anonymized, one at a time| DS[Local LLM<br/>Ollama, Qwen2.5 7B]
 ```
 
-MAID is one system with one human user. It reads public filings and prices and sends only anonymized
-prompts to the LLM provider. The external connections are planned; today ingest loads a synthetic demo dataset and scoring uses a stub scorer.
+MAID is one system with one human user. It reads public filings and prices and sends only anonymized prompts to a local model on the same machine (no paid API, D21). The external connections are planned; today ingest loads a synthetic demo dataset and scoring uses a stub scorer.
 
 Level 2, containers:
 
@@ -55,7 +54,7 @@ flowchart LR
     end
     C -->|planned| SEC[SEC EDGAR]
     C -->|planned| YF[yfinance]
-    C -->|planned| DS[DeepSeek API]
+    C -->|planned| DS[Local LLM<br/>Ollama, Qwen2.5 7B]
 ```
 
 The pipeline orchestrates the steps, hands the decision matrix to the pure-function MCDM engine, and
@@ -119,7 +118,7 @@ sequenceDiagram
     participant S as Scorer agents
     participant H as Human
     participant M as MCDM engine
-    G->>S: fan out per company x criterion (planned: Send)
+    G->>S: criterion agents run one after another (sequential jobs, D21)
     S-->>G: scores + evidence quotes
     G->>H: interrupt(scores) , state saved by checkpointer
     H-->>G: resume(overrides + reasons)
@@ -127,10 +126,10 @@ sequenceDiagram
     M-->>G: weights, ranking
 ```
 
-The interrupt sits after the join, not inside parallel branches, so the human reviews everything once.
+The interrupt sits after all scoring agents have finished, so the human reviews everything once.
 Today the graph uses `MemorySaver`, which keeps checkpoints in process memory: a paused run survives
 within one Python process, but a restart loses it. Resuming across restarts needs a persistent
-checkpointer (e.g. SQLite) and is planned. Today the graph is linear (no fan-out yet). Overrides are
+checkpointer (e.g. SQLite) and is planned. The graph is linear by design: no parallel fan-out (D21). Overrides are
 validated with a mandatory reason and applied to the scores in the mcdm node before the decision matrix is built.
 
 ## 5. Evaluation
