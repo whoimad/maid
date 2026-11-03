@@ -44,7 +44,7 @@ def main() -> int:
             except ScoringError as e:
                 failed += 1
                 recs = scorer.log[n0:]
-                rows.append((c, labels[c], crit, f"ERROR: {e}", "", f"0/{a.k}", sum(not r["ok"] for r in recs),
+                rows.append((c, labels[c], crit, f"ERROR: {e}", "", f"{sum(r['ok'] for r in recs)}/{a.k}", sum(not r["ok"] for r in recs),
                              sum(r["prompt_tokens"] for r in recs), ct["source"], ct["truncated"], ""))
                 continue
             except ContextTruncated as e:
