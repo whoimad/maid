@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:dei="http://xbrl.sec.gov/dei/2024">
+  <dei:TradingSymbol contextRef="c-3">TAP.A</dei:TradingSymbol>
+  <dei:SecurityExchangeName contextRef="c-3">NYSE</dei:SecurityExchangeName>
+  <dei:TradingSymbol contextRef="c-4">TAP</dei:TradingSymbol>
+  <dei:SecurityExchangeName contextRef="c-4">NYSE</dei:SecurityExchangeName>
+  <dei:TradingSymbol contextRef="c-5">TAP 32</dei:TradingSymbol>
+  <dei:SecurityExchangeName contextRef="c-5">NYSE</dei:SecurityExchangeName>
+  <dei:EntityCommonStockSharesOutstanding contextRef="c-7" decimals="INF" unitRef="shares">2563034</dei:EntityCommonStockSharesOutstanding>
+  <dei:EntityCommonStockSharesOutstanding contextRef="c-8" decimals="INF" unitRef="shares">190157977</dei:EntityCommonStockSharesOutstanding>
+  <dei:EntityCommonStockSharesOutstanding contextRef="c-8" decimals="INF" unitRef="shares">190157977</dei:EntityCommonStockSharesOutstanding>
+</xbrli:xbrl>

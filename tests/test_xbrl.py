@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from maid.xbrl import annual_value, latest_10k, tech_criteria
+from maid.xbrl import annual_value, latest_10k, parse_cover, staples_criteria, tech_criteria
 
 FIX = Path(__file__).parent / "fixtures/sec"
 
@@ -63,3 +63,56 @@ def test_latest_10k_custom_tags():
     assert latest_10k(F, "2025-03-31", REV) == ("A-2025", "2025-02-10", "2024-12-31")
     with pytest.raises(ValueError):
         latest_10k(F, "2025-03-31", ["NoSuchTag"])
+
+
+def test_revenue_including_tax_fallback():
+    f = copy.deepcopy(F)
+    u = f["facts"]["us-gaap"]
+    u["RevenueFromContractWithCustomerIncludingAssessedTax"] = u.pop("RevenueFromContractWithCustomerExcludingAssessedTax")
+    c = tech_criteria(f, "2025-03-31")
+    assert c["tags"]["revenue"] == "RevenueFromContractWithCustomerIncludingAssessedTax"
+    assert c["values"]["revenue_growth"] == pytest.approx(1000 / 800 - 1)
+
+
+def test_profit_loss_fallback():
+    f = copy.deepcopy(F)
+    u = f["facts"]["us-gaap"]
+    u["ProfitLoss"] = u.pop("NetIncomeLoss")
+    c = tech_criteria(f, "2025-03-31")
+    assert c["tags"]["net_income"] == "ProfitLoss"
+    assert c["values"]["net_margin"] == pytest.approx(0.2)
+
+
+def _with_assets():
+    f = copy.deepcopy(F)
+    row = {"end": "2024-12-31", "val": 4000, "accn": "A-2025", "form": "10-K", "filed": "2025-02-10"}
+    f["facts"]["us-gaap"]["Assets"] = {"units": {"USD": [
+        row, {**row, "start": "2024-01-01", "val": 9999}, {**row, "accn": "A-2026", "val": 8888}]}}
+    return f
+
+
+def test_staples_criteria_roa():
+    c = staples_criteria(_with_assets(), "2025-03-31")
+    assert c["values"] == pytest.approx({"revenue_growth": 0.25, "net_margin": 0.2, "fcf_margin": 0.25, "roa": 0.05})
+    assert "rd" not in c["tags"] and c["tags"]["assets"] == "Assets"
+
+
+def test_staples_criteria_missing_assets_raises():
+    with pytest.raises(ValueError, match="Assets"):
+        staples_criteria(F, "2025-03-31")
+
+
+def test_tech_criteria_unchanged():
+    assert tech_criteria(F, "2025-03-31") == {
+        "accn": "A-2025", "filed": "2025-02-10", "period_end": "2024-12-31",
+        "values": {"revenue_growth": 0.25, "net_margin": 0.2, "fcf_margin": 0.25, "rd_intensity": 0.15},
+        "tags": {"revenue": "RevenueFromContractWithCustomerExcludingAssessedTax", "net_income": "NetIncomeLoss",
+                 "operating_cash_flow": "NetCashProvidedByUsedInOperatingActivities",
+                 "capex": "PaymentsToAcquirePropertyPlantAndEquipment", "rd": "ResearchAndDevelopmentExpense"}}
+
+
+def test_parse_cover():
+    c = parse_cover((FIX / "cover_two_classes.xml").read_text())
+    assert c["shares"] == 192721011.0
+    assert c["symbols"] == [["TAP.A", "NYSE"], ["TAP", "NYSE"], ["TAP 32", "NYSE"]]
+    assert parse_cover('<x xmlns:dei="http://xbrl.sec.gov/dei/2024"/>')["shares"] is None
