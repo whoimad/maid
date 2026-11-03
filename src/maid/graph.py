@@ -1,19 +1,28 @@
 """LangGraph pipeline matching docs/SCOPE.md section 5. Runs on a synthetic demo dataset with a stub scorer."""
+import logging
+import time
+
 import numpy as np
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
+from maid.cache import DiskCache
 from maid.config import get_settings
 from maid.demo_data import QUAL_CRITERIA, QUANT_CRITERIA, demo_dataset
+from maid.llm import LLMScorer, make_client, quote_in_text
 from maid.matrix import apply_overrides, build_matrix, kendall_tau
 from maid.mcdm import critic_weights, entropy_weights, equal_weights, robust_ranking, saw, topsis
-from maid.real_data import SECTORS, load_sec
+from maid.real_data import SECTORS, load_filings, load_sec
+from maid.rubrics import PROMPT_VERSION
 from maid.scoring import StubScorer, aggregate, evidence_is_quoted
 from maid.state import CHECKPOINT_TYPES, CriterionScore, PipelineState, ScoreOverride
+from maid.tenk import criterion_text
 
-DEFAULT_SETTINGS = {"source": "demo", "sector": "tech", "k": 5, "weighting": "critic", "seed": 0, "n_draws": 500, "concentration": 100.0}
+DEFAULT_SETTINGS = {"source": "demo", "sector": "tech", "k": 5, "weighting": "critic", "seed": 0, "n_draws": 500, "concentration": 100.0,
+                    "scorer": "auto", "limit": 0}
+LLM_CRITERIA = ["pricing_power", "strategy_clarity", "capital_allocation"]  # agent order (D21: sequential)
 WEIGHT_FNS = {"entropy": entropy_weights, "critic": critic_weights, "equal": equal_weights}
 
 
@@ -28,7 +37,11 @@ def validate_settings(settings: dict) -> dict:
         raise ValueError(f"unknown source: {merged['source']!r}")
     if merged["sector"] not in ("tech", "staples"):
         raise ValueError(f"unknown sector: {merged['sector']!r}")
-    for key, low in (("k", 1), ("seed", 0), ("n_draws", 1)):
+    if merged["scorer"] not in ("auto", "llm"):
+        raise ValueError(f"unknown scorer: {merged['scorer']!r}")
+    if merged["scorer"] == "llm" and (merged["source"], merged["sector"]) != ("sec", "staples"):
+        raise ValueError('scorer="llm" requires source="sec" and sector="staples"')
+    for key, low in (("k", 1), ("seed", 0), ("n_draws", 1), ("limit", 0)):
         v = merged[key]
         if not isinstance(v, int) or isinstance(v, bool) or v < low:
             raise ValueError(f"{key} must be an int >= {low}: {v!r}")
@@ -53,12 +66,20 @@ def ingest(state: PipelineState) -> dict:
         tickers, quant, filings = {}, ds.quantitative, ds.filings
         available, criteria = ds.companies, QUANT_CRITERIA + QUAL_CRITERIA
     companies = state.get("companies") or available
+    if settings["source"] == "sec" and settings["limit"] > 0 and not state.get("companies"):
+        companies = sorted(available)[:settings["limit"]]
     unknown = [c for c in companies if c not in available]
     if unknown:
         raise ValueError(f"unknown companies: {unknown}")
     if len(set(companies)) != len(companies):
         raise ValueError(f"duplicate companies: {companies}")
+    criterion_texts = {}
+    if settings["source"] == "sec" and settings["scorer"] == "llm":
+        _, texts, _ = load_filings(get_settings().decision_date, settings["sector"])
+        criterion_texts = {f"{c}|{k}": criterion_text(texts[c], k)["text"] for c in companies for k in LLM_CRITERIA}
+        criteria = criteria + LLM_CRITERIA
     return {
+        "criterion_texts": criterion_texts,
         "companies": list(companies),
         "quantitative": {c: quant[c] for c in companies},
         "filings": {c: filings[c] for c in companies},
@@ -85,6 +106,39 @@ def score_qualitative(state: PipelineState) -> dict:
             samples[f"{c}|{crit}"] = [s.score for s in drawn]
             noise[f"{c}|{crit}"] = std
     return {"qualitative": qualitative, "score_samples": samples, "score_noise": noise}
+
+
+def make_agent(criterion: str):
+    """Graph node for one LLM criterion agent: scores every company for its criterion, one call at a time."""
+    def agent(state: PipelineState) -> dict:
+        settings = _settings(state)
+        if settings["scorer"] != "llm":
+            return {}
+        cfg = get_settings()
+        scorer = LLMScorer(make_client(cfg), cfg.model, DiskCache(cfg.cache_dir / "llm"), seed=settings["seed"])
+        t0 = time.perf_counter()
+        qualitative = list(state.get("qualitative", []))
+        samples, noise = dict(state.get("score_samples", {})), dict(state.get("score_noise", {}))
+        n = len(state["companies"])
+        for i, c in enumerate(state["companies"], 1):
+            text = state["criterion_texts"][f"{c}|{criterion}"]
+            drawn = scorer.score(c, criterion, text, settings["k"])
+            score, std = aggregate(drawn)
+            if not quote_in_text(score.evidence, text):
+                raise ValueError(f"evidence not in 10-K text: {c}, {criterion}")
+            qualitative.append(score)
+            samples[f"{c}|{criterion}"] = [s.score for s in drawn]
+            noise[f"{c}|{criterion}"] = std
+            logging.getLogger("maid.agents").info("%s %d/%d %s", criterion, i, n, c)
+        run = {"model": sorted({r["model"] for r in scorer.log}), "prompt_version": PROMPT_VERSION,
+               "calls": len(scorer.log), "failed_attempts": sum(not r["ok"] for r in scorer.log),
+               "prompt_tokens": sum(r["prompt_tokens"] for r in scorer.log),
+               "completion_tokens": sum(r["completion_tokens"] for r in scorer.log),
+               "seconds": round(time.perf_counter() - t0, 1)}
+        return {"qualitative": qualitative, "score_samples": samples, "score_noise": noise,
+                "agent_runs": {**state.get("agent_runs", {}), criterion: run}}
+    agent.__name__ = f"agent_{criterion}"
+    return agent
 
 
 def parse_overrides(decision, qualitative: list[CriterionScore]) -> list[ScoreOverride]:
@@ -160,7 +214,11 @@ def report(state: PipelineState) -> dict:
     bo, di, sn = rb["bootstrap"], rb["dirichlet"], rb["score_noise"]
     tau = state["method_agreement"]["kendall_tau_topsis_saw"]
     sec, tickers = st["source"] == "sec", state.get("tickers") or {}
-    head = ([f"# MAID report: real data ({st['sector']}, quantitative only)", "",
+    llm = st["scorer"] == "llm"
+    head = ([f"# MAID report: real data ({st['sector']}, quantitative + local LLM scores)", "",
+             f"> **Real data**: SEC XBRL and 10-K text, point-in-time on {get_settings().decision_date}; LLM scores from a "
+             "local model, agents run one after another (D21). Local only: do not commit.", ""] if llm else
+            [f"# MAID report: real data ({st['sector']}, quantitative only)", "",
              f"> **Real data**: SEC XBRL, point-in-time on the decision date {get_settings().decision_date}; "
              "4 quantitative criteria, no LLM scores. Local only: do not commit.", ""] if sec else
             ["# MAID demo report", "",
@@ -168,7 +226,8 @@ def report(state: PipelineState) -> dict:
     lines = [
         *head,
         f"Settings: source={st['source']}, weighting={st['weighting']}, k={st['k']}, seed={st['seed']}, "
-        f"n_draws={st['n_draws']}, concentration={st['concentration']}", "",
+        f"n_draws={st['n_draws']}, concentration={st['concentration']}"
+        + (f", scorer={st['scorer']}, limit={st['limit']}" if llm else ""), "",
         "## Ranking (by TOPSIS)", "",
         "| Rank | Company | TOPSIS | SAW | Bootstrap 90% rank | Dirichlet 90% rank | Score-noise 90% rank | P(rank 1) Dirichlet |",
         "|---|---|---|---|---|---|---|---|",
@@ -180,34 +239,38 @@ def report(state: PipelineState) -> dict:
                      f"{di['lo'][i]:.0f}-{di['hi'][i]:.0f} | {sn['lo'][i]:.0f}-{sn['hi'][i]:.0f} | {di['acceptability'][i][0]:.2f} |")
     lines += ["", "Score-noise intervals re-draw each LLM score from its K samples (median of a resample) and "
               "recompute weights; human-overridden scores are held fixed, and with k=1 the interval has zero width."]
-    if sec:
+    if sec and not llm:
         lines += ["", "No LLM scores in this run, so score-noise intervals have zero width."]
     lines += ["", "## Weights", "", "| Criterion | Weight |", "|---|---|"]
     lines += [f"| {k} | {v:.3f} |" for k, v in state["weights"].items()]
     lines += ["", f"Method agreement (Kendall tau, TOPSIS vs SAW): {tau:.3f}", "", "## Human overrides", ""]
     lines += [f"- {o.company} / {o.criterion} -> {o.score}: {o.reason}" for o in state.get("overrides", [])] or ["none"]
-    lines += ["", "LLMs never rank: this run has no LLM scores; ranks come from the MCDM engine." if sec else
+    if llm:
+        lines += ["", "## Agents (sequential jobs, D21)", "",
+                  "| Agent | Model | Prompt version | Calls | Failed attempts | Prompt tokens | Minutes |",
+                  "|---|---|---|---|---|---|---|"]
+        for k in LLM_CRITERIA:
+            a = state["agent_runs"][k]
+            lines.append(f"| {k} | {', '.join(a['model'])} | {a['prompt_version']} | {a['calls']} | {a['failed_attempts']} | "
+                         f"{a['prompt_tokens']} | {a['seconds'] / 60:.1f} |")
+    lines += ["", "LLMs never rank: scores come from local LLM agents run one after another (D21); ranks come from the MCDM engine."
+              if llm else
+              "LLMs never rank: this run has no LLM scores; ranks come from the MCDM engine." if sec else
               "LLMs never rank: scores come from the (stub) scorer, ranks from the MCDM engine.", ""]
     return {"report": "\n".join(lines)}
 
 
 def build_graph():
     g = StateGraph(PipelineState)
-    for name, fn in [
-        ("ingest", ingest),
-        ("score_qualitative", score_qualitative),
-        ("human_review", human_review),
-        ("mcdm", mcdm),
-        ("robustness", robustness),
-        ("report", report),
-    ]:
-        g.add_node(name, fn)
-    g.add_edge(START, "ingest")
-    g.add_edge("ingest", "score_qualitative")
-    g.add_edge("score_qualitative", "human_review")
-    g.add_edge("human_review", "mcdm")
-    g.add_edge("mcdm", "robustness")
-    g.add_edge("robustness", "report")
-    g.add_edge("report", END)
+    agents = [f"agent_{k}" for k in LLM_CRITERIA]
+    order = ["ingest", "score_qualitative", *agents, "human_review", "mcdm", "robustness", "report"]
+    fns = {"ingest": ingest, "score_qualitative": score_qualitative, "human_review": human_review, "mcdm": mcdm,
+           "robustness": robustness, "report": report}
+    for k in LLM_CRITERIA:
+        fns[f"agent_{k}"] = make_agent(k)
+    for name in order:
+        g.add_node(name, fns[name])
+    for a, b in zip([START, *order], [*order, END], strict=True):
+        g.add_edge(a, b)
     serde = JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINT_TYPES)
     return g.compile(checkpointer=MemorySaver(serde=serde))

@@ -7,6 +7,7 @@ from maid.mcdm import critic_weights, entropy_weights, equal_weights
 DEFAULT_STATUSES = {
     "ingest": "demo", "score_qualitative": "demo", "human_review": "real",
     "mcdm": "real", "robustness": "real", "report": "real",
+    "agent_pricing_power": "stub", "agent_strategy_clarity": "stub", "agent_capital_allocation": "stub",
 }
 FILL = {"real": "#b7e4c7", "demo": "#ffe8a3", "stub": "#d9d9d9"}
 
