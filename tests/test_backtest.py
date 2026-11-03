@@ -68,6 +68,27 @@ def test_backtest_missing_return_raises(monkeypatch):
         backtest("equal", {"AAA": 0.4, "CCC": 0.3, "BBB": 0.2}, n_draws=10)
 
 
+def test_backtest_no_outcome_left_out(monkeypatch):
+    monkeypatch.setattr(graph, "load_sec", _fake)
+    res = backtest("equal", {"AAA": 0.4, "CCC": 0.3, "BBB": 0.2}, n_draws=10, no_outcome=["DDD"])
+    assert res["n"] == 3
+    assert "DDD" not in [r["ticker"] for r in res["rows"]]
+    assert res["no_outcome"] == ["DDD"]
+    assert res["kendall_tau"] == pytest.approx(1)
+
+
+def test_backtest_no_outcome_unknown_raises(monkeypatch):
+    monkeypatch.setattr(graph, "load_sec", _fake)
+    with pytest.raises(ValueError, match="ZZZ"):
+        backtest("equal", {"AAA": 0.4, "CCC": 0.3, "BBB": 0.2, "DDD": 0.1}, n_draws=10, no_outcome=["ZZZ"])
+
+
+def test_backtest_no_outcome_with_return_raises(monkeypatch):
+    monkeypatch.setattr(graph, "load_sec", _fake)
+    with pytest.raises(ValueError, match="DDD"):
+        backtest("equal", {"AAA": 0.4, "CCC": 0.3, "BBB": 0.2, "DDD": 0.1}, n_draws=10, no_outcome=["DDD"])
+
+
 def test_graph_never_reads_prices():
     src = inspect.getsource(maid.graph)
     assert "maid.prices" not in src

@@ -1,6 +1,6 @@
 """Backtest the quant-only real ranking: TOPSIS score on 2025-03-31 vs total return 2025-04-01..2026-03-31.
 
-Usage (from the repo root): python scripts/backtest.py [--sector tech|staples] [--n-draws 50]
+Usage (from the repo root): python scripts/backtest.py [--sector tech|staples] [--no-outcome TICKER ...] [--n-draws 50]
 Needs the SEC cache (or SEC_USER_AGENT) and network for yfinance; prices are cached under data/cache (local only).
 Prints only; writes nothing. Primary test: CRITIC weights, Kendall tau. Entropy and equal weights are sensitivity.
 A company that stops trading inside the window keeps its return to the last close (then cash, 0%).
@@ -17,10 +17,17 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sector", choices=["tech", "staples"], default="tech")
     ap.add_argument("--n-draws", type=int, default=50)
+    ap.add_argument("--no-outcome", action="append", default=[], metavar="TICKER",
+                    help="ranked but left out of the correlation (no price history); see data.md")
     a = ap.parse_args()
     tickers = sorted(run_demo({"source": "sec", "sector": a.sector, "n_draws": 1}, thread_id="tickers")["tickers"].values())
+    if unknown := [t for t in a.no_outcome if t not in tickers]:
+        print(f"--no-outcome tickers not in the universe: {unknown}", file=sys.stderr)
+        return 2
     returns, failed, delisted = {}, [], []
     for t in tickers:
+        if t in a.no_outcome:
+            continue
         try:
             series = fetch_series(t, "2025-03-20", "2026-04-01", "Adj Close")
             if not series:
@@ -36,9 +43,11 @@ def main() -> int:
         print(f"{len(failed)} tickers without prices (Yahoo often returns empty data when rate limiting). "
               "Re-run later; successful downloads are cached.", file=sys.stderr)
         return 1
+    if a.no_outcome:
+        print("no outcome (ranked, left out of the correlation): " + ", ".join(sorted(a.no_outcome)))
     print("delisted inside the window: " + (", ".join(delisted) or "none"))
     for w in WEIGHTINGS:
-        res = backtest(w, returns, a.n_draws, a.sector)
+        res = backtest(w, returns, a.n_draws, a.sector, no_outcome=a.no_outcome)
         if w == "critic":
             print("| Rank | Company | Ticker | TOPSIS | Total return |\n|---|---|---|---|---|")
             for i, x in enumerate(res["rows"], 1):
