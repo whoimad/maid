@@ -110,6 +110,22 @@ class SecClient:
             return self.fetch_text(url, self.user_agent)
         return self.cache.get_or_compute(DiskCache.key("sec-doc", cik, accn), get)
 
+    def filing_documents(self, cik, accn: str) -> list[dict]:
+        """.htm documents of a filing as {"name", "size"} from its index (cached)."""
+        def get():
+            base = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accn.replace('-', '')}"
+            items = self.fetch(f"{base}/index.json", self.user_agent)["directory"]["item"]
+            return [{"name": i["name"], "size": int(i["size"]) if str(i.get("size", "")).strip().isdigit() else 0}
+                    for i in items if i["name"].lower().endswith(".htm")]
+        return self.cache.get_or_compute(DiskCache.key("sec-index", cik, accn), get)
+
+    def document_html(self, cik, accn: str, name: str) -> str:
+        """One named document (HTML) of a filing (cached)."""
+        def get():
+            url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accn.replace('-', '')}/{name}"
+            return self.fetch_text(url, self.user_agent)
+        return self.cache.get_or_compute(DiskCache.key("sec-doc", cik, accn, name), get)
+
     def tickers(self) -> dict:
         """Ticker/CIK table."""
         return self._cached("https://www.sec.gov/files/company_tickers_exchange.json")

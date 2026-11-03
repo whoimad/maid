@@ -8,9 +8,11 @@ import statistics
 import sys
 
 from maid.config import get_settings
-from maid.real_data import SECTORS, company_filing, load_sec, read_universe
+from maid.real_data import SECTORS, company_filing, load_sec, read_aliases, read_universe
 from maid.sec import SecClient
-from maid.tenk import approx_tokens
+from maid.tenk import BUDGET_TOKENS, EXTRACTOR_VERSION, criterion_text
+
+CRIT = ("strategy_clarity", "pricing_power", "capital_allocation")
 
 
 def main() -> int:
@@ -25,11 +27,14 @@ def main() -> int:
         print(f"ERROR {e}", file=sys.stderr)
         return 1
     ciks = {r["ticker"]: int(r["cik"]) for r in read_universe(SECTORS[a.sector][0])}
-    counts, toks, failed = {"ok": 0, "SHORT": 0, "EMPTY": 0}, [], False
+    aliases = read_aliases()
+    counts, failed = {"ok": 0, "SHORT": 0, "EMPTY": 0}, False
+    exhibits = no_split = n_trunc = 0
+    residuals = []
     for label, ticker in labels.items():  # same per-company loop as real_data.load_filings, but failures do not stop it
         accn = meta[label]["accn"]
         try:
-            t, n = company_filing(client, ciks[ticker], accn, ticker, label)
+            t, info = company_filing(client, ciks[ticker], accn, ticker, label, aliases.get(ticker, ()))
         except Exception as e:  # noqa: BLE001 - report and continue per company
             if "SEC_USER_AGENT" in str(e):
                 print(f"ERROR {e}", file=sys.stderr)
@@ -40,10 +45,20 @@ def main() -> int:
         w = {k: len(t[k].split()) for k in ("1", "1a", "7")}
         flag = "EMPTY" if not w["1"] or not w["7"] else "SHORT" if w["1"] < 1000 or w["7"] < 1000 else "ok"
         counts[flag] += 1
-        toks.append(approx_tokens(t["7"]))
-        print(f"{label} {ticker} {accn} {w['1']} {w['1a']} {w['7']} ~{toks[-1]} {n} {flag}")
-    print(f"ok={counts['ok']} SHORT={counts['SHORT']} EMPTY={counts['EMPTY']}"
-          + (f" max_tokens_7={max(toks)} median_tokens_7={int(statistics.median(toks))}" if toks else ""))
+        c = {k: criterion_text(t, k) for k in CRIT}
+        cut = [k for k in CRIT if c[k]["truncated"]]
+        split = c["pricing_power"]["split_found"]
+        exhibits += info["mdna_source"] != "body"
+        no_split += not split
+        n_trunc += bool(cut)
+        residuals.append(info["residual"])
+        print(f"{label} {ticker} {accn} {w['1']} {w['1a']} {w['7']} {info['mdna_source']} {info['replacements']} "
+              f"{info['residual']} {c['strategy_clarity']['tokens']} {c['pricing_power']['tokens']} "
+              f"{c['capital_allocation']['tokens']} {'y' if split else 'n'} {','.join(cut) or '-'} {flag}")
+    print(f"ok={counts['ok']} SHORT={counts['SHORT']} EMPTY={counts['EMPTY']} exhibit_mdna={exhibits} "
+          f"no_split={no_split} truncated={n_trunc}"
+          + (f" max_residual={max(residuals)} median_residual={int(statistics.median(residuals))}" if residuals else "")
+          + f" extractor={EXTRACTOR_VERSION} budget={BUDGET_TOKENS}")
     return 1 if failed or counts["EMPTY"] else 0
 
 
