@@ -55,6 +55,11 @@ def test_anonymize_text():
     assert anonymize_text("ACMEX and acme", ["ACME FOODS"], "ACME", "L")[1] == 0
 
 
+def test_anonymize_hyphen_and_space_variants():
+    out, n = anonymize_text("The Coca-Cola Company and Coca Cola and COCA-COLA.", ["COCA COLA CO"], "KO", "Company 030")
+    assert n == 3 and "Coca" not in out and "COCA" not in out
+
+
 def test_approx_tokens():
     assert approx_tokens("abcd") == 1
     assert approx_tokens("") == 0

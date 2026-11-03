@@ -90,7 +90,8 @@ def anonymize_text(text: str, names: list[str], ticker: str, label: str) -> tupl
     """Replace whole-word registrant names (case-insensitive) and the ticker (case-sensitive) with label."""
     count = 0
     guard = r"(?<![A-Za-z0-9]){}(?![A-Za-z0-9])"
-    pats = [re.compile(guard.format(r"\s+".join(map(re.escape, v.split(" ")))), re.I) for v in name_variants(names)]
+    sep = r"[\s\-‐‑–]+"
+    pats = [re.compile(guard.format(sep.join(map(re.escape, re.split(sep, v)))), re.I) for v in name_variants(names)]
     if len(ticker) >= 2:
         pats.append(re.compile(guard.format(re.escape(ticker))))
     for p in pats:
