@@ -6,7 +6,8 @@ import pytest
 
 import maid.graph
 from maid import graph
-from maid.backtest import backtest, rank_vs_return
+from maid.backtest import WINDOW, backtest, rank_vs_return, window_return
+from maid.prices import total_return
 
 TECH_CRITERIA = ["revenue_growth", "net_margin", "fcf_margin", "rd_intensity"]
 
@@ -19,7 +20,7 @@ def no_network(monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", boom)
 
 
-def _fake(decision_date=None):
+def _fake(decision_date=None, sector="tech"):
     labels = {"Company A": "AAA", "Company B": "BBB", "Company C": "CCC", "Company D": "DDD"}
     vals = [[0.30, 0.25, 0.30, 0.20], [0.10, 0.10, 0.12, 0.08], [0.20, 0.18, 0.20, 0.15], [0.05, 0.02, 0.05, 0.03]]
     quant = {c: dict(zip(TECH_CRITERIA, v, strict=True)) for c, v in zip(labels, vals, strict=True)}
@@ -71,3 +72,21 @@ def test_graph_never_reads_prices():
     src = inspect.getsource(maid.graph)
     assert "maid.prices" not in src
     assert "fetch_series" not in src
+
+
+def test_window_return_normal():
+    adj = {"2025-03-31": 100.0, "2026-03-31": 120.0}
+    w = window_return(adj, *WINDOW)
+    assert w == {"return": pytest.approx(0.2), "last_day": "2026-03-31", "delisted": False}
+    assert w["return"] == total_return(adj, *WINDOW)
+
+
+def test_window_return_delisted():
+    adj = {"2025-03-31": 100.0, "2025-12-10": 90.0, "2025-12-12": 95.0}
+    w = window_return(adj, *WINDOW)
+    assert w == {"return": pytest.approx(-0.05), "last_day": "2025-12-12", "delisted": True}
+
+
+def test_window_return_no_data_raises():
+    with pytest.raises(ValueError):
+        window_return({"2025-03-31": 100.0}, *WINDOW)

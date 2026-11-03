@@ -28,6 +28,7 @@ def _jsonable(o):
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--source", choices=["demo", "sec"])
+    p.add_argument("--sector", choices=["tech", "staples"])
     p.add_argument("--weighting", choices=["entropy", "critic", "equal"])
     p.add_argument("--k", type=int)
     p.add_argument("--seed", type=int)
@@ -36,7 +37,7 @@ def main() -> None:
     p.add_argument("--overrides", help="path to a JSON list of {company, criterion, score, reason}")
     p.add_argument("--json", help="write the final state as JSON to this path (with --source sec, write it under data/: real data stays local)")
     a = p.parse_args()
-    given = {"source": a.source, "weighting": a.weighting, "k": a.k, "seed": a.seed, "n_draws": a.n_draws, "concentration": a.concentration}
+    given = {"source": a.source, "sector": a.sector,"weighting": a.weighting, "k": a.k, "seed": a.seed, "n_draws": a.n_draws, "concentration": a.concentration}
     settings = {k: v for k, v in given.items() if v is not None}
     overrides = None
     if a.overrides:
