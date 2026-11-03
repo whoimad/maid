@@ -1,6 +1,6 @@
 # Real data: sources, time rule, universe, criteria
 
-This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`), universe selection (`universe.py`, `scripts/select_universe.py`) and the price layer (`prices.py`) implemented; the consumer-staples universe (floor rule, plan 025) is built and frozen with no returns looked at; wired into the graph for tech via settings["source"] = "sec" (src/maid/real_data.py; quantitative only, labels "Company A".. in ticker order).
+This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`), universe selection (`universe.py`, `scripts/select_universe.py`) and the price layer (`prices.py`) implemented; the consumer-staples universe (floor rule, plan 025) is built and frozen with no returns looked at; wired into the graph for tech and staples via settings["source"] = "sec" and settings["sector"] (src/maid/real_data.py; quantitative only, labels "Company 001".. in ticker order).
 
 ## Sources
 
