@@ -14,7 +14,7 @@
 - **Risk**: MED (changes the graph shape; demo path must stay identical)
 - **Depends on**: plan 031 (LLM scorer), plan 032 (local only, D21; prompt v2)
 - **Category**: direction
-- **Planned at**: `integration/prototype` after plan 032 is merged, 2026-11-03 (the reviewer gives the SHA)
+- **Planned at**: commit `65bd00b` on `integration/prototype` (plan 032 merged), 2026-11-03
 
 ## Why this matters
 

@@ -40,6 +40,8 @@ honor its STOP conditions, and update your row when done.
 | [029](029-tenk-text-ingest.md) | 10-K text: fetch the decision-date 10-K, extract Items 1/1A/7 (TOC- and cross-reference-safe), anonymize names and ticker; coverage script | P1 | M | 027 | DONE (branch `feat/tenk-text`, c67e016; reviewed after 1 revision: hyphenated names ("Coca-Cola"); merged `20a063a`; real fetch: 60 ok, CLX short (MD&A by reference), 10 companies weakly anonymized → plan 030) |
 | [030](030-tenk-text-v2.md) | Text v2: "Item 1.A." headings, MD&A by reference (exhibit), anonymization v2 (state tags, &, accents, apostrophes, initials, core names, alias list), per-criterion slices with a 24k-token budget | P1 | M | 029 | DONE (branch `feat/tenk-text-v2`, 030c82d + bc8ccc5; reviewed after 1 revision: common-word cores (Post, Corn, National), dotless SA (Bunge ×193), 15 aliases; merged `e185bcd`; real fetch: 61 ok, CLX exhibit MD&A, 3 no split, 3 truncated, distinctive leftovers 0) |
 | [031](031-llm-scorer.md) | LLM scorer: `LLM_*` settings, rubrics (`PROMPT_VERSION`), `LLMScorer` (K cached samples, normalized quote check, retries, truncation guard), pilot script, D20 | P1 | M | 030 | DONE (branch `feat/llm-scorer`, f1aa033 + bb6b905; reviewed after 1 fix: pilot valid count for failed cells; merged `9110535`; pilot NOT run: needs a 32k-context Ollama model or a DeepSeek key) |
+| [032](032-local-only-sequential-agents.md) | Local models only, agents as sequential jobs (D21; supersedes D14/D20); `make_client` refuses non-local servers; prompt v2 (single-sentence quote ≤ 400 chars); limitation stated across docs, INTERVIEW Q12 | P1 | M | 031 | DONE (branch `feat/local-only`, 0f285a2; reviewed; merged `65bd00b`) |
+| [033](033-sequential-llm-agents-in-graph.md) | Three LLM criterion agents (pricing power → strategy clarity → capital allocation) as sequential, cache-resumable graph nodes; `scorer="llm"`, `limit`; report "Agents" table | P1 | M | 032 | DONE (branch `feat/sequential-agents`, 61489bf; reviewed; merged `033b064`; 7 new tests instead of 10, all plan items covered; demo output identical) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -129,6 +131,13 @@ context size must be set explicitly and over-long text refused, never silently t
   shows the allocated context; `response_format` and `seed` are supported.
 - Real fetch (2026-11-03): median MD&A ~15.5k tokens, max ~64k (PEP); KO's `www.coca-colacompany.com` URL survives
   anonymization (a recognition cue for 032).
+
+### Batch 10 (032–033): local models only (2026-11-03)
+
+Owner decision: no paid API ever; one local model (Ollama `qwen2.5-32k`) fills the 8 GB GPU, so agents are conceptually
+multi-agent but run as sequential jobs (D21). Qwen2.5 released 2024-09-19 (GitHub README), before the decision date.
+Smoke test: ~10–20 s per call; 4/6 attempts failed the 300-char quote rule → prompt v2. Next: pilot review, then
+recognition probe and the pre-registered comparison (renumber as 034/035).
 
 ## Findings considered and rejected
 
