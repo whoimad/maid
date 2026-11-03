@@ -1,5 +1,6 @@
 """Universe rule (docs/architecture/data.md): SIC sector, NYSE/Nasdaq, 10-K filer, top 15 by market cap."""
-from datetime import date as _date, timedelta
+from datetime import date as _date
+from datetime import timedelta
 
 from maid import xbrl
 

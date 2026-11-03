@@ -1,6 +1,6 @@
-"""Select the 15 largest companies of a sector by market cap on the decision date (needs SEC_USER_AGENT; local only).
+"""Select the 15 largest companies of a sector (tech, banks) or all above a market-cap floor (staples) on the decision date.
 
-Usage: python scripts/select_universe.py {tech,banks} [--date 2025-03-31] [--write]
+Needs SEC_USER_AGENT; local only. Usage: python scripts/select_universe.py {tech,banks,staples} [--date 2025-03-31] [--write] [--out-dir DIR]
 """
 import argparse
 import csv
@@ -14,12 +14,26 @@ from maid.cache import DiskCache
 from maid.config import get_settings
 from maid.prices import PriceNetworkError, market_price_on
 from maid.sec import SecClient, cik10
-from maid.universe import SECTORS, eligible_annual, in_sector, listed, shares_outstanding, top_n
+from maid.universe import (
+    MIN_CAP,
+    SECTORS,
+    above_floor,
+    eligible_annual,
+    in_sector,
+    listed,
+    listed_on_cover,
+    pick_ticker,
+    public_float,
+    shares_outstanding,
+    top_n,
+)
+from maid.xbrl import latest_10k, staples_criteria
 
 PRESCREEN = 40
 WORKERS = 8
 COLS = ["rank", "ticker", "cik", "name", "sic", "market_cap_usd", "shares", "shares_accn", "close", "price_date", "decision_date", "shares_source"]
-
+EXCL_COLS = ["cik", "name", "sic", "ticker", "public_float_usd", "reason", "decision_date"]
+ASSET_FRAMES = ["CY2024Q1I", "CY2024Q2I", "CY2024Q3I", "CY2024Q4I"]
 
 FRAMES = [("dei", "EntityCommonStockSharesOutstanding", "CY2025Q1I"), ("dei", "EntityCommonStockSharesOutstanding", "CY2024Q4I"),
           ("us-gaap", "CommonStockSharesOutstanding", "CY2024Q4I"),
@@ -34,27 +48,147 @@ def frame_shares(client: SecClient, taxonomy: str, tag: str, period: str) -> dic
     return out
 
 
+def sic_info(client: SecClient, sic_cache: DiskCache, cik: int) -> dict:
+    """{"sic", "name"} for a CIK from SEC submissions (cached on disk)."""
+    def get():
+        s = sec._get_json(f"https://data.sec.gov/submissions/CIK{cik10(cik)}.json", client.user_agent)
+        return {"sic": s.get("sic", ""), "name": s.get("name", "")}
+    return sic_cache.get_or_compute(DiskCache.key("sic", cik), get)
+
+
+def floor_main(a, client: SecClient) -> int:
+    """Staples: every sector company with a 10-K and market cap >= floor; nothing is dropped without a bucket."""
+    err = lambda *x: print(*x, file=sys.stderr)  # noqa: E731
+    try:
+        listed_today = listed(client.tickers())
+        sic_cache = DiskCache(get_settings().cache_dir / "sic")
+        cands = sorted({int(r["cik"]) for p in ASSET_FRAMES for r in client.frame("us-gaap", "Assets", "USD", p)["data"]})
+        err(f"candidates (reported Assets in 2024): {len(cands)}")
+        info: dict[int, dict] = {}
+        failed: list[int] = []
+        with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+            futs = {ex.submit(sic_info, client, sic_cache, cik): cik for cik in cands}
+            for n, f in enumerate(as_completed(futs), 1):
+                try:
+                    info[futs[f]] = f.result()
+                except (ValueError, OSError) as e:
+                    if isinstance(e, ValueError) and "SEC_USER_AGENT" in str(e):
+                        ex.shutdown(wait=False, cancel_futures=True)
+                        raise
+                    failed.append(futs[f])
+                if n % 500 == 0:
+                    err(f"SIC scan {n}/{len(cands)}")
+        if failed:
+            err(f"ERROR: submissions failed for CIKs {sorted(failed)}; rerun resumes from cache")
+            return 1
+        sector = sorted(c for c in cands if in_sector(info[c]["sic"], a.sector))
+        err(f"in sector: {len(sector)}")
+        ineligible, excluded, priced = 0, [], []
+        for cik in sector:
+            name, sic = info[cik]["name"], info[cik]["sic"]
+            facts = ticker = None
+            try:
+                facts = client.companyfacts(cik)
+            except urllib.error.HTTPError as e:
+                if e.code != 404:
+                    raise
+            if facts is None:
+                ineligible += 1
+                continue
+
+            def drop(reason, ticker=None, cik=cik, name=name, sic=sic, facts=facts):
+                excluded.append({"cik": cik, "name": name, "sic": sic, "ticker": ticker or "",
+                                 "public_float_usd": public_float(facts, a.date), "reason": reason})
+
+            try:
+                accn = latest_10k(facts, a.date)[0]
+            except ValueError:
+                ineligible += 1
+                continue
+            try:
+                cover = client.cover(cik, accn)
+            except ValueError as e:
+                if "SEC_USER_AGENT" in str(e):
+                    raise
+                drop(f"cover: {e}")
+                continue
+            if not listed_on_cover(cover):
+                ineligible += 1
+                continue
+            try:
+                staples_criteria(facts, a.date)
+            except ValueError as e:
+                drop(f"criteria: {e}")
+                continue
+            try:
+                n_sh, sh_accn, src = shares_outstanding(facts, a.date, cover)
+            except ValueError as e:
+                drop(f"shares: {e}")
+                continue
+            try:
+                ticker = pick_ticker(cik, cover, listed_today)
+            except ValueError as e:
+                drop(f"ticker: {e}")
+                continue
+            try:
+                p = market_price_on(ticker, a.date)
+            except PriceNetworkError as e:
+                err(f"ERROR price lookup failed after retries: {e}")
+                return 1
+            except ValueError as e:
+                if cik in listed_today:
+                    err(f"ERROR price lookup failed for listed {ticker}: {e}")
+                    return 1
+                drop(f"no Yahoo price: {e}", ticker)
+                continue
+            priced.append({"cik": cik, "ticker": ticker, "name": name, "sic": sic, "market_cap": n_sh * p["close"],
+                           "shares": n_sh, "accn": sh_accn, "close": p["close"], "price_date": p["date"], "source": src})
+    except ValueError as e:
+        err(f"ERROR {e}")
+        return 1
+    sel = above_floor(priced, MIN_CAP[a.sector])
+    for i, r in enumerate(sel, 1):
+        print(f"{i:>2} {r['ticker']:<6} {r['name'][:32]:<32} {r['sic']} {r['market_cap'] / 1e9:>9.1f}bn {r['accn']} {r['price_date']} {r['source']}")
+    print(f"candidates {len(cands)}, in sector {len(sector)}, ineligible {ineligible}, excluded {len(excluded)}, "
+          f"priced {len(priced)}, below floor {len(priced) - len(sel)}, selected {len(sel)}")
+    if a.write:
+        out = Path(a.out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        with (out / f"{a.sector}.csv").open("w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(COLS)
+            for i, r in enumerate(sel, 1):
+                w.writerow([i, r["ticker"], r["cik"], r["name"], r["sic"], round(r["market_cap"]), r["shares"], r["accn"],
+                            r["close"], r["price_date"], a.date, r["source"]])
+        excluded.sort(key=lambda r: (r["public_float_usd"] is None, -(r["public_float_usd"] or 0), r["cik"]))
+        with (out / f"{a.sector}_excluded.csv").open("w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(EXCL_COLS)
+            for r in excluded:
+                pf = "" if r["public_float_usd"] is None else round(r["public_float_usd"])
+                w.writerow([r["cik"], r["name"], r["sic"], r["ticker"], pf, r["reason"], a.date])
+        print(f"wrote {out / (a.sector + '.csv')} and {out / (a.sector + '_excluded.csv')}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("sector", choices=sorted(SECTORS))
     ap.add_argument("--date", default=get_settings().decision_date)
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--out-dir", default="data/universe")
     a = ap.parse_args()
     client, cache_dir = SecClient(), get_settings().cache_dir
+    if a.sector in MIN_CAP:
+        return floor_main(a, client)
     try:
         cands = listed(client.tickers())
         sic_cache = DiskCache(cache_dir / "sic")
         in_sec: dict[int, dict] = {}
 
-        def scan(cik):
-            def get():
-                s = sec._get_json(f"https://data.sec.gov/submissions/CIK{cik10(cik)}.json", client.user_agent)
-                return {"sic": s.get("sic", ""), "name": s.get("name", "")}
-            return sic_cache.get_or_compute(DiskCache.key("sic", cik), get)
-
         done = failed = 0
         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
-            futs = {ex.submit(scan, cik): cik for cik in cands}
+            futs = {ex.submit(sic_info, client, sic_cache, cik): cik for cik in cands}
             for f in as_completed(futs):
                 cik = futs[f]
                 done += 1
@@ -136,7 +270,7 @@ def main() -> int:
     for i, r in enumerate(sel, 1):
         print(f"{i:>2} {r['ticker']:<6} {r['name'][:32]:<32} {r['sic']} {r['market_cap'] / 1e9:>9.1f}bn {r['accn']} {r['price_date']}")
     if a.write:
-        out = Path("data/universe") / f"{a.sector}.csv"
+        out = Path(a.out_dir) / f"{a.sector}.csv"
         out.parent.mkdir(parents=True, exist_ok=True)
         with out.open("w", newline="") as f:
             w = csv.writer(f)
