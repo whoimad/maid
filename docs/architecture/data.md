@@ -110,6 +110,23 @@ Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NP
 - Run: `python scripts/backtest.py`. Output is printed only and stays local.
 - First result (2026-11-02): no association (primary Kendall tau +0.05, p = 0.85), with very low power at n = 15. See [backtest-quant-only-results.md](../research/backtest-quant-only-results.md).
 
+### Backtest #2: consumer staples (pre-registered 2026-11-03, before any staples return was computed)
+
+- Universe: the 61 companies in `data/universe/staples.csv` (plan 025, D19). No company is added or removed; the 19
+  in `staples_excluded.csv` stay out.
+- Inputs: `revenue_growth`, `net_margin`, `fcf_margin`, `roa` from the latest 10-K filed on or before 2025-03-31;
+  quantitative only, no LLM.
+- Ranking: CRITIC weights, then TOPSIS (graph defaults).
+- Outcome: total return with dividends reinvested (Yahoo `Adj Close`) from the 2025-03-31 close to the 2026-03-31
+  close. A company that stops trading inside the window gets its return up to its last close and 0% after that
+  (cash earns nothing).
+- **Primary test:** Kendall tau between TOPSIS score and total return, two-sided, alpha = 0.05.
+- Secondary: Spearman rho. Sensitivity only: entropy and equal weights (not extra chances to find an effect).
+- Power (seeded simulation, bivariate normal, n = 61, 2000 trials): about 12% for a true correlation of 0.1, 32%
+  for 0.2, 60% for 0.3. A null result is likely even if a modest signal exists, and will be reported as such.
+- The result is written up whatever it is, with summary statistics only (per-company returns stay local).
+- Run: `python scripts/backtest.py --sector staples`.
+
 ## Local-only data
 
 Downloads and derived files live under `data/cache/` and `data/raw/` (both gitignored) and are never committed or pushed (owner rule). Only `data/universe/*.csv` is committed. Tests use small hand-made JSON fixtures under `tests/fixtures/`, never real downloads, and never touch the network.
