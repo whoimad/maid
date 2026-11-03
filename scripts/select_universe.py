@@ -147,6 +147,9 @@ def floor_main(a, client: SecClient) -> int:
         err(f"ERROR {e}")
         return 1
     sel = above_floor(priced, MIN_CAP[a.sector])
+    for r in sorted(priced, key=lambda r: -r["market_cap"]):
+        if 0.9e9 <= r["market_cap"] < MIN_CAP[a.sector]:
+            print(f"near floor: {r['ticker']} {r['market_cap'] / 1e9:.2f}bn {r['source']}", file=sys.stderr)
     for i, r in enumerate(sel, 1):
         print(f"{i:>2} {r['ticker']:<6} {r['name'][:32]:<32} {r['sic']} {r['market_cap'] / 1e9:>9.1f}bn {r['accn']} {r['price_date']} {r['source']}")
     print(f"candidates {len(cands)}, in sector {len(sector)}, ineligible {ineligible}, excluded {len(excluded)}, "

@@ -83,6 +83,28 @@ def test_profit_loss_fallback():
     assert c["values"]["net_margin"] == pytest.approx(0.2)
 
 
+def _rename_test(old, new, key):
+    f = copy.deepcopy(F)
+    u = f["facts"]["us-gaap"]
+    u[new] = u.pop(old)
+    c = tech_criteria(f, "2025-03-31")
+    assert c["tags"][key] == new
+    assert c["values"]["fcf_margin"] == pytest.approx(0.25)
+
+
+def test_capex_other_ppe_fallback():
+    _rename_test("PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireOtherPropertyPlantAndEquipment", "capex")
+
+
+def test_capex_other_productive_fallback():
+    _rename_test("PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireOtherProductiveAssets", "capex")
+
+
+def test_ocf_continuing_fallback():
+    _rename_test("NetCashProvidedByUsedInOperatingActivities",
+                 "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations", "operating_cash_flow")
+
+
 def _with_assets():
     f = copy.deepcopy(F)
     row = {"end": "2024-12-31", "val": 4000, "accn": "A-2025", "form": "10-K", "filed": "2025-02-10"}

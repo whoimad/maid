@@ -7,8 +7,10 @@ REVENUE = ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "S
 TAGS = {
     "revenue": REVENUE,
     "net_income": ["NetIncomeLoss", "ProfitLoss"],
-    "operating_cash_flow": ["NetCashProvidedByUsedInOperatingActivities"],
-    "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
+    "operating_cash_flow": ["NetCashProvidedByUsedInOperatingActivities",
+                            "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
+    "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets",
+              "PaymentsToAcquireOtherPropertyPlantAndEquipment", "PaymentsToAcquireOtherProductiveAssets"],
     "rd": ["ResearchAndDevelopmentExpense", "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
            "ResearchAndDevelopmentExpenseSoftwareExcludingAcquiredInProcessCost"],
 }
