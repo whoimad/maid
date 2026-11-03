@@ -109,3 +109,14 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Why:** the 15-company tech backtest had almost no power. Staples are a stable, comparable sector, and every company above a $1bn market cap on the decision date (about 55) gives a larger n (61 companies selected in the frozen run) chosen by a rule alone, before any returns are looked at, so the later backtest is pre-registered. Candidates come from companies that reported 2024 `Assets`, not today's ticker list, so companies delisted later are not silently missing. ROA (net income / total assets) is reported by every staples company, unlike R&D. Details in [data.md](data.md).
 - **Cost:** power is only about 31% at rho 0.2 with n of about 55; delisted names without Yahoo history are excluded, so some survivorship remains; SIC puts Ecolab in and Walmart, Costco, Target, Dollar General, Sysco and Kimberly-Clark out.
 - **Revisit if:** the excluded list turns out to hold many large companies, or the SIC ranges give an implausible universe.
+
+## D20. Scorer models: a local Ollama model for development and the older-cutoff check, DeepSeek for the main run
+- **Alternatives:** DeepSeek only; a hosted older model; different text per model (each model's full context).
+- **Why:** a local model costs nothing while prompts and rubrics are developed, and an open-weight model released
+  before the 2025-03-31 decision date gives the older-cutoff comparison (D3, D14). One OpenAI-compatible client serves
+  both (`LLM_*` settings fall back to `DEEPSEEK_*`). Both models read the same per-criterion slice of the 10-K
+  (`tenk.criterion_text`, 24k-token budget), so differences come from the model, not the input.
+- **Cost:** a 7–8B model at 4-bit is weaker than DeepSeek, so disagreement mixes capability with leakage; Ollama's
+  default 4k context would silently truncate prompts, so the scorer refuses any reply whose reported prompt tokens are
+  below 70% of the estimate (`ContextTruncated`) and such replies are never cached.
+- **Status:** decided 2026-11-03 (extends D14). Pilot: 10 companies, K = 5, reviewed by the owner before all 61 run.
