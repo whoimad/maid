@@ -64,7 +64,6 @@ Selected by `scripts/select_universe.py <sector> --write` on 2025-03-31 market c
 |---|---|
 | Tech | AAPL, MSFT, NVDA, GOOGL, META, AVGO, ORCL, CRM, CSCO, IBM, PLTR, INTU, QCOM, AMD, NOW |
 | Banks | JPM, BAC, WFC, C, PNC, COF, USB, BNY, TFC, MTB, FCNCA, FITB, STT, HBAN, RF |
-
 | Staples | floor rule, see `data/universe/staples.csv` (selected) and `data/universe/staples_excluded.csv` (excluded with reason) |
 
 - 15th place in tech is close: NOW 164.0bn vs TXN 163.6bn and ADBE 163.5bn. Small share-count or price differences could swap it; the rule is applied as written.
