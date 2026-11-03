@@ -33,7 +33,8 @@ honor its STOP conditions, and update your row when done.
 | [022](022-universe-share-fallbacks-and-price-retry.md) | Fix universe: share-count fallbacks (Alphabet/Meta missing), Yahoo retries (NVIDIA dropped), Adobe R&D tag | P1 | S | 021 | DONE (branch `fix/universe-shares`, d7ae7b3; reviewed; merged; real runs: tech and banks pass sanity checks, CSVs committed) |
 | [023](023-real-data-quant-only-graph.md) | Graph runs on real SEC data: `source="sec"`, frozen tech universe, labels Company A..O, quant only, no LLM | P1 | M | 019–022, D18 | DONE (branch `feat/real-data-graph`, 65d9146; reviewed; merged; real run: 15 OK, CRITIC top 5 NVDA, META, AVGO, NOW, QCOM; weights sum 1) |
 | [024](024-backtest-quant-only.md) | Backtest: TOPSIS score vs total return 2025-04-01..2026-03-31; primary CRITIC + Kendall tau, fixed before the result | P1 | S | 023 | DONE (branch `feat/backtest`, 8737330; reviewed; merged `08a58f2`; real run reproduced by the reviewer; result stays local, run `python scripts/backtest.py`) |
-| [025](025-staples-universe.md) | Staples universe: SIC ranges, $1bn floor, survivorship-safe candidates, cover-page share counts, ROA; freeze `staples.csv` (no returns) | P1 | L | 019–024 | TODO |
+| [025](025-staples-universe.md) | Staples universe: SIC ranges, $1bn floor, survivorship-safe candidates, cover-page share counts, ROA; freeze `staples.csv` (no returns) | P1 | L | 019–024 | DONE (branch `feat/staples-universe`, 434766b; reviewed after 2 revisions: plan's TAP check was wrong (owner's source order kept; WA vs cover accepted), 3 capex/OCF fallback tags added (Smithfield, Primo Brands rescued); 61 selected, 19 excluded; tech/banks re-run identical; merged 4bf145c) |
+| [026](026-staples-backtest.md) | Staples in the graph (`sector` setting, numeric labels), delisted-aware window return, pre-registered test in data.md; reviewer runs the real backtest | P1 | M | 025 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -104,6 +105,8 @@ From `plans/HANDOFF.md` (owner decisions 1–9 of 2026-11-02). Advisor checks be
 the delisted K, THS, KLG, STKL, OLPX (GIS worked in the same call), so under the decided rule they end up in
 `staples_excluded.csv`; the 10-K instance `_htm.xml` gives the cover share counts for Tyson, Constellation and
 Molson Coors. Plan 026 (staples backtest) is written after 025 is reviewed.
+Owner decision 2026-11-03: accept losing Kellanova (and the other delisted names without Yahoo history); keep
+one rule for everyone, no deal-price exceptions.
 
 ## Findings considered and rejected
 
