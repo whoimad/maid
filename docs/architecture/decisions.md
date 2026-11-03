@@ -103,3 +103,9 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Why:** simplest rule that treats every company the same. `NetIncomeLoss` is the only income tag all 15 tech companies report in their point-in-time 10-K: IBM has no `OperatingIncomeLoss` and Oracle has no pre-tax income tag. Dropping IBM would break the D17 selection rule.
 - **Cost:** net income includes taxes, interest and one-off items, so it is noisier than operating income as a measure of core profitability.
 - **Revisit if:** a different universe makes operating income available for every company.
+
+## D19. Staples universe: SIC ranges, $1bn floor, survivorship-safe candidates, ROA
+- **Alternatives:** energy, utilities, pharma (rejected: geopolitics, rate-driven, policy shocks); medical devices (backup); a fixed N such as the top 55; gross margin and asset turnover instead of ROA (business-model driven).
+- **Why:** the 15-company tech backtest had almost no power. Staples are a stable, comparable sector, and every company above a $1bn market cap on the decision date (about 55) gives a larger n (61 companies selected in the frozen run) chosen by a rule alone, before any returns are looked at, so the later backtest is pre-registered. Candidates come from companies that reported 2024 `Assets`, not today's ticker list, so companies delisted later are not silently missing. ROA (net income / total assets) is reported by every staples company, unlike R&D. Details in [data.md](data.md).
+- **Cost:** power is only about 31% at rho 0.2 with n of about 55; delisted names without Yahoo history are excluded, so some survivorship remains; SIC puts Ecolab in and Walmart, Costco, Target, Dollar General, Sysco and Kimberly-Clark out.
+- **Revisit if:** the excluded list turns out to hold many large companies, or the SIC ranges give an implausible universe.
