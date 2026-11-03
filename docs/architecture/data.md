@@ -1,6 +1,6 @@
 # Real data: sources, time rule, universe, criteria
 
-This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`), universe selection (`universe.py`, `scripts/select_universe.py`) and the price layer (`prices.py`) implemented; wired into the graph for tech via settings["source"] = "sec" (src/maid/real_data.py; quantitative only, labels "Company A".. in ticker order).
+This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py`, `src/maid/universe.py`, `src/maid/prices.py`) implements. Status: SEC quantitative extraction implemented (`xbrl.py`, `sec.py`, `scripts/fetch_sec.py`), universe selection (`universe.py`, `scripts/select_universe.py`) and the price layer (`prices.py`) implemented; the consumer-staples universe (floor rule, plan 025) is built and frozen with no returns looked at; wired into the graph for tech via settings["source"] = "sec" (src/maid/real_data.py; quantitative only, labels "Company A".. in ticker order).
 
 ## Sources
 
@@ -38,12 +38,23 @@ This page is the spec that the ingest code (`src/maid/sec.py`, `src/maid/xbrl.py
 |---|---|
 | Tech | 3570-3579 (computer equipment), 3661-3663 (communications equipment), 3670-3679 (semiconductors and electronic components), 7370-7379 (software and IT services) |
 | Banks | 6021 (national commercial banks), 6022 (state commercial banks) |
+| Staples | 2000-2099 (food and beverages), 2100-2199 (tobacco), 2840-2844 (household and personal products), 5411 (grocery stores) |
 
+- Staples side effects of SIC (accepted, no name added or removed by hand): Walmart, Costco, Target, Dollar General (5331), Sysco (5140) and Kimberly-Clark (2670) are out; Ecolab is in.
 - Known side effects of SIC: Amazon (5961) and Tesla (3711) are not tech. Visa and Mastercard (7389) are not tech. Goldman Sachs and Morgan Stanley (6211, broker-dealers) are not banks. Alphabet and Meta (7370) are tech.
 - Eligibility: listed on NYSE or Nasdaq; files 10-K (foreign 20-F filers are excluded); has a 10-K filed on or before the decision date that also reports the prior fiscal year (needed for revenue growth).
 - Ranking: market cap on the decision date = shares outstanding from the latest filing filed on or before the decision date: cover page (`dei:EntityCommonStockSharesOutstanding`, summed over classes), else `us-gaap:CommonStockSharesOutstanding`, else `us-gaap:WeightedAverageNumberOfSharesOutstandingBasic` (multi-class filers such as Alphabet and Meta only appear through the fallbacks, because the SEC API omits per-class cover facts). The source used is recorded in the CSV x closing price on the decision date (yfinance, split-corrected). Multi-class companies use one class's price: an approximation.
 - The list is frozen and committed at `data/universe/<sector>.csv`. It is the only committed file under `data/`.
 - Known limitation (kept from SCOPE section 4): selecting the largest names adds mild survivorship and winner bias.
+- Share-count rule (all sectors): a source is skipped if its latest value is zero or its latest filing was filed more than 456 days (about 15 months) before the date; the next source is tried. A fourth source is the cover-page `dei:EntityCommonStockSharesOutstanding` read from the 10-K's own inline XBRL instance (`<name>_htm.xml` found via the filing `index.json`), summed over share classes; the CSV `shares_source` records `10-K cover (instance)` when it is used. Order: companyfacts dei, then `CommonStockSharesOutstanding`, then the weighted average, then the 10-K cover. TAP, EL, MKC, HRL, SAM, TR and UTZ end up on the weighted average (a period average, accepted as an approximation: TAP is 208.8M vs 192.7M on its cover; moving the cover earlier would reorder the frozen banks list). This fixes companyfacts gaps (for example Molson Coors, whose only dei value is 0 from 2010).
+
+### Staples (floor rule)
+
+- Every staples company with a market cap of at least $1bn on the decision date. No fixed N and no pre-screen.
+- Candidates (survivorship): every company that reported us-gaap `Assets` in 2024 (SEC frames `CY2024Q1I` to `CY2024Q4I`), not today's ticker list, so companies delisted after the decision date are still seen.
+- Eligibility: a 10-K filed on or before the decision date, and an exchange listing (`NYSE` or `NASDAQ`) on that 10-K's cover (`dei:SecurityExchangeName`). Ticker: today's ticker if the CIK is still listed, else the first NYSE/Nasdaq cover symbol without whitespace, `.` turned into `-`. A ticker that today belongs to another CIK is rejected (reused ticker).
+- Delisted companies are included if Yahoo has a price for them; otherwise they are listed in `data/universe/staples_excluded.csv` with the reason (`no Yahoo price`, `criteria`, `shares`, `ticker` or `cover`) and the public float as a size hint. A listed company whose price lookup fails stops the run instead of being dropped.
+- The excluded file is part of the pre-registration record: later plans must not re-add excluded companies.
 
 ### Frozen universes
 
@@ -53,6 +64,7 @@ Selected by `scripts/select_universe.py <sector> --write` on 2025-03-31 market c
 |---|---|
 | Tech | AAPL, MSFT, NVDA, GOOGL, META, AVGO, ORCL, CRM, CSCO, IBM, PLTR, INTU, QCOM, AMD, NOW |
 | Banks | JPM, BAC, WFC, C, PNC, COF, USB, BNY, TFC, MTB, FCNCA, FITB, STT, HBAN, RF |
+| Staples | floor rule, see `data/universe/staples.csv` (selected) and `data/universe/staples_excluded.csv` (excluded with reason) |
 
 - 15th place in tech is close: NOW 164.0bn vs TXN 163.6bn and ADBE 163.5bn. Small share-count or price differences could swap it; the rule is applied as written.
 
@@ -69,6 +81,20 @@ All are benefit-type (higher is better). The tag lists are fallbacks: the first 
 
 - Annual fact = duration between 350 and 380 days (52/53-week years) with `end` equal to the 10-K's fiscal period end. FY-1 = the same tags, same 10-K accession, `end` 350-380 days earlier.
 - If no tag matches, ingest fails loudly with the company, criterion and tags tried. It never fills in zero.
+
+## Quantitative criteria (staples)
+
+Same conventions as tech (benefit-type, first matching tag wins, annual facts 350-380 days, fail loudly). Revenue, net margin and FCF margin use the tech formulas; R&D is not used.
+
+| Criterion | Formula | XBRL tags (us-gaap, in fallback order) |
+|---|---|---|
+| `revenue_growth` | Rev(FY) / Rev(FY-1) - 1 | `RevenueFromContractWithCustomerExcludingAssessedTax`, `Revenues`, `SalesRevenueNet`, `RevenueFromContractWithCustomerIncludingAssessedTax` |
+| `net_margin` | NetIncome / Rev | `NetIncomeLoss`, `ProfitLoss` |
+| `fcf_margin` | (OperatingCashFlow - Capex) / Rev | `NetCashProvidedByUsedInOperatingActivities`, then `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`; capex: `PaymentsToAcquirePropertyPlantAndEquipment`, `PaymentsToAcquireProductiveAssets`, then `PaymentsToAcquireOtherPropertyPlantAndEquipment`, `PaymentsToAcquireOtherProductiveAssets` |
+| `roa` | NetIncome / Assets | `Assets`: instant fact (no `start`), same 10-K accession, `end` equal to the 10-K period end |
+
+- `RevenueFromContractWithCustomerIncludingAssessedTax`, `ProfitLoss`, `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`, `PaymentsToAcquireOtherPropertyPlantAndEquipment` and `PaymentsToAcquireOtherProductiveAssets` are appended last in their fallback lists, so the tech values are unchanged (checked before and after on all 15 tech companies).
+- `roa` replaces `rd_intensity`, which most staples do not report.
 
 ## Quantitative criteria (banks)
 

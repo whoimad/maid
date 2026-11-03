@@ -7,6 +7,7 @@ import urllib.request
 
 from maid.cache import DiskCache
 from maid.config import get_settings
+from maid.xbrl import parse_cover
 
 MIN_INTERVAL = 0.125  # seconds between request starts, shared by all threads (SEC allows 10/s)
 RETRIES = 3
@@ -24,8 +25,8 @@ def _slot() -> None:
         time.sleep(start - now)
 
 
-def _get_json(url: str, user_agent: str) -> dict:
-    """GET a JSON URL with the SEC User-Agent; rate-limited across threads; retries transient network errors."""
+def _get_bytes(url: str, user_agent: str) -> bytes:
+    """GET a URL with the SEC User-Agent; rate-limited across threads; retries transient network errors."""
     if not user_agent.strip():
         raise ValueError("SEC_USER_AGENT is not set (SEC requires a contact, e.g. 'MAID research you@example.com')")
     req = urllib.request.Request(url, headers={"User-Agent": user_agent, "Accept-Encoding": "identity"})
@@ -33,7 +34,7 @@ def _get_json(url: str, user_agent: str) -> dict:
         _slot()
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
-                return json.loads(r.read())
+                return r.read()
         except urllib.error.HTTPError as e:
             if e.code not in (429, 500, 502, 503, 504) or attempt == RETRIES - 1:
                 raise
@@ -41,6 +42,16 @@ def _get_json(url: str, user_agent: str) -> dict:
             if attempt == RETRIES - 1:
                 raise
         time.sleep(2 ** attempt)
+
+
+def _get_json(url: str, user_agent: str) -> dict:
+    """GET a JSON URL (see _get_bytes)."""
+    return json.loads(_get_bytes(url, user_agent))
+
+
+def _get_text(url: str, user_agent: str) -> str:
+    """GET a text URL (see _get_bytes)."""
+    return _get_bytes(url, user_agent).decode("utf-8")
 
 
 def cik10(cik) -> str:
@@ -51,11 +62,13 @@ def cik10(cik) -> str:
 class SecClient:
     """Cached SEC JSON endpoints."""
 
-    def __init__(self, cache: DiskCache | None = None, user_agent: str | None = None, fetch=_get_json):
+    def __init__(self, cache: DiskCache | None = None, user_agent: str | None = None, fetch=_get_json,
+                 fetch_text=_get_text):
         s = get_settings()
         self.cache = cache or DiskCache(s.cache_dir / "sec")
         self.user_agent = s.sec_user_agent if user_agent is None else user_agent
         self.fetch = fetch
+        self.fetch_text = fetch_text
 
     def _cached(self, url: str) -> dict:
         # Never expires on purpose: companyfacts only grows and the filed <= decision_date filter makes old and new copies agree.
@@ -72,6 +85,17 @@ class SecClient:
     def frame(self, taxonomy: str, tag: str, unit: str, period: str) -> dict:
         """XBRL frame: one value per company for a tag and period."""
         return self._cached(f"https://data.sec.gov/api/xbrl/frames/{taxonomy}/{tag}/{unit}/{period}.json")
+
+    def cover(self, cik, accn: str) -> dict:
+        """Cover-page shares and symbols from the 10-K's inline XBRL instance (cached)."""
+        def get():
+            base = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accn.replace('-', '')}"
+            names = [i["name"] for i in self.fetch(f"{base}/index.json", self.user_agent)["directory"]["item"]
+                     if i["name"].endswith("_htm.xml")]
+            if len(names) != 1:
+                raise ValueError(f"no single inline XBRL instance in {accn}: {names}")
+            return {"accn": accn, **parse_cover(self.fetch_text(f"{base}/{names[0]}", self.user_agent))}
+        return self.cache.get_or_compute(DiskCache.key("sec-cover", cik, accn), get)
 
     def tickers(self) -> dict:
         """Ticker/CIK table."""

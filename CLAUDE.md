@@ -30,7 +30,7 @@ python scripts/weight_stability.py # spike #6 simulation
 - `src/maid/real_data.py`: frozen universe -> anonymized labels -> SEC criteria for the graph
 - `src/maid/backtest.py`: rank vs total return (Kendall/Spearman), quant-only baseline
 - `scripts/backtest.py`: run the backtest on the real tech universe (prints only)
-- `scripts/select_universe.py`: select the 15-company universe per sector
+- `scripts/select_universe.py`: select the tech/bank top 15 or the staples floor universe
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
 - `docs/architecture/`: architecture overview, per-block docs, design decisions

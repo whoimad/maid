@@ -3,12 +3,13 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
 from maid import sec
 from maid.cache import DiskCache
-from maid.sec import SecClient, _get_json, ticker_to_cik
+from maid.sec import SecClient, _get_json, _get_text, ticker_to_cik
 
 
 @pytest.fixture(autouse=True)
@@ -43,6 +44,42 @@ def test_ticker_to_cik():
     assert ticker_to_cik(tj, "aapl") == 320193
     with pytest.raises(ValueError):
         ticker_to_cik(tj, "ZZZZ")
+
+
+COVER = (Path(__file__).parent / "fixtures/sec/cover_two_classes.xml").read_text()
+
+
+def _cover_client(tmp_path, names, urls, texts):
+    def fj(url, ua):
+        urls.append(url)
+        return {"directory": {"item": [{"name": n} for n in names]}}
+
+    def ft(url, ua):
+        texts.append(url)
+        return COVER
+
+    return SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch=fj, fetch_text=ft)
+
+
+def test_cover_cached(tmp_path):
+    urls, texts = [], []
+    c = _cover_client(tmp_path, ["a_htm.xml", "a_cal.xml"], urls, texts)
+    r = c.cover(24545, "0000024545-25-000007")
+    assert c.cover(24545, "0000024545-25-000007") == r
+    assert len(texts) == 1 and texts[0].endswith("/a_htm.xml")
+    assert r["accn"] == "0000024545-25-000007" and r["shares"] == 192721011.0
+    assert "/Archives/edgar/data/24545/000002454525000007/index.json" in urls[0]
+
+
+def test_cover_needs_single_instance(tmp_path):
+    c = _cover_client(tmp_path, ["a_cal.xml"], [], [])
+    with pytest.raises(ValueError, match="single inline XBRL"):
+        c.cover(1, "0000000001-25-000001")
+
+
+def test_get_text_user_agent_required():
+    with pytest.raises(ValueError, match="SEC_USER_AGENT"):
+        _get_text("https://example.invalid", "  ")
 
 
 class _Resp:
