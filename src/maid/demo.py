@@ -1,4 +1,4 @@
-"""Run the whole pipeline: python -m maid.demo [--source sec]."""
+"""Run the whole pipeline: python -m maid.demo [--source sec] [--sector staples --scorer llm --limit 10]."""
 import argparse
 import json
 
@@ -34,10 +34,13 @@ def main() -> None:
     p.add_argument("--seed", type=int)
     p.add_argument("--n-draws", type=int)
     p.add_argument("--concentration", type=float)
+    p.add_argument("--scorer", choices=["auto", "llm"])
+    p.add_argument("--limit", type=int)
     p.add_argument("--overrides", help="path to a JSON list of {company, criterion, score, reason}")
     p.add_argument("--json", help="write the final state as JSON to this path (with --source sec, write it under data/: real data stays local)")
     a = p.parse_args()
-    given = {"source": a.source, "sector": a.sector,"weighting": a.weighting, "k": a.k, "seed": a.seed, "n_draws": a.n_draws, "concentration": a.concentration}
+    given = {"source": a.source, "sector": a.sector,"weighting": a.weighting, "k": a.k, "seed": a.seed, "n_draws": a.n_draws, "concentration": a.concentration,
+             "scorer": a.scorer, "limit": a.limit}
     settings = {k: v for k, v in given.items() if v is not None}
     overrides = None
     if a.overrides:

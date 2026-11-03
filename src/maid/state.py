@@ -32,6 +32,8 @@ class PipelineState(TypedDict, total=False):
     tickers: dict[str, str]  # label -> ticker for source="sec"; local only, never put into prompts
     score_samples: dict[str, list[int]]  # "company|criterion" -> K sampled scores
     score_noise: dict[str, float]  # "company|criterion" -> std of the K samples
+    criterion_texts: dict[str, str]  # "company|criterion" -> anonymized 10-K slice the agent reads (source="sec", scorer="llm")
+    agent_runs: dict[str, dict]  # criterion -> {"model", "prompt_version", "calls", "failed_attempts", "prompt_tokens", "completion_tokens", "seconds"}
     settings: dict  # {"source", "k", "weighting", "seed", "n_draws", "concentration"}
     matrix: list[list[float]]  # X after overrides
     scores: dict[str, list[float]]  # {"topsis": [...], "saw": [...]} in `companies` order

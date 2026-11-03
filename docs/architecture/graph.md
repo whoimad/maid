@@ -10,7 +10,10 @@ review, and resume afterwards.
 flowchart LR
     __start__ --> ingest
     ingest --> score_qualitative
-    score_qualitative --> human_review
+    score_qualitative --> agent_pricing_power
+    agent_pricing_power --> agent_strategy_clarity
+    agent_strategy_clarity --> agent_capital_allocation
+    agent_capital_allocation --> human_review
     human_review --> mcdm
     mcdm --> robustness
     robustness --> report
@@ -25,10 +28,17 @@ Linear; all nodes are implemented on a synthetic demo dataset with a stub scorer
 |---|---|---|---|
 | `ingest` | `companies`, `settings` | `companies`, `quantitative`, `filings`, `criteria`, `settings` | demo implemented (synthetic dataset); real SEC tech universe with source="sec" (quantitative only, no LLM) |
 | `score_qualitative` | `companies`, `filings`, `settings` | `qualitative`, `score_samples`, `score_noise` | stub scorer implemented; local LLM scorer (`llm.py`, D21) not yet wired in |
+| `agent_pricing_power` | `companies`, `criterion_texts`, `settings`, `qualitative` | `qualitative`, `score_samples`, `score_noise`, `agent_runs` | built (local LLM, sequential, D21); no-op unless scorer="llm" |
+| `agent_strategy_clarity` | `companies`, `criterion_texts`, `settings`, `qualitative` | `qualitative`, `score_samples`, `score_noise`, `agent_runs` | built (local LLM, sequential, D21); no-op unless scorer="llm" |
+| `agent_capital_allocation` | `companies`, `criterion_texts`, `settings`, `qualitative` | `qualitative`, `score_samples`, `score_noise`, `agent_runs` | built (local LLM, sequential, D21); no-op unless scorer="llm" |
 | `human_review` | `qualitative` | `overrides` | implemented (pauses, validates overrides) |
 | `mcdm` | `qualitative`, `overrides`, `quantitative`, `criteria`, `settings` | `matrix`, `weights`, `scores`, `ranking`, `method_agreement` | implemented; overrides applied here |
 | `robustness` | `matrix`, `settings`, `score_samples`, `overrides`, `companies`, `criteria` | `robustness` | implemented |
 | `report` | state | `report` (Markdown) | implemented |
+
+The three criterion agents are separate nodes that run one after another (D21: one local model fills the GPU). Each
+adds its scores to what earlier agents produced, so no reducer is needed. Every reply is cached, so an interrupted run
+resumes where it stopped.
 
 `PipelineState` keys (no key has a reducer, so each write replaces the key's value):
 

@@ -197,3 +197,99 @@ def test_read_aliases_real_file():
 
     a = read_aliases()
     assert a["PG"] == ["P&G", "Procter & Gamble"] and a["EL"] == ["Estée Lauder", "Lauder"] and len(a) == 16
+
+
+# --- LLM criterion agents (plan 033) ---
+from types import SimpleNamespace as NS  # noqa: E402
+
+from maid.graph import LLM_CRITERIA  # noqa: E402
+from maid.rubrics import RUBRICS  # noqa: E402
+
+LABELS = {"Company 001": "AAPL", "Company 002": "MSFT", "Company 003": "NVDA"}
+MDNA = ("We raised prices 4% in fiscal 2024 and volume held steady. "
+        "We repurchased shares worth 500 million and paid dividends. " * 3)
+QUOTES = {"strategy_clarity": "We aim to grow margins 2% by 2026.", "pricing_power": "We raised prices 4% in fiscal 2024",
+          "capital_allocation": "We repurchased shares worth 500 million"}
+
+
+class AgentClient:
+    """Replies with a quote from the slice the criterion reads (found via the rubric in the system message)."""
+
+    def __init__(self, empty=False):
+        self.calls, self.empty = [], empty
+        self.chat = NS(completions=NS(create=self.create))
+
+    def create(self, **kw):
+        assert not self.empty, "unexpected LLM call"
+        self.calls.append(kw)
+        sys_msg, user = kw["messages"][0]["content"], kw["messages"][1]["content"]
+        crit = next(c for c in RUBRICS if RUBRICS[c] in sys_msg)
+        score = 3 + len(self.calls) % 5
+        body = json.dumps({"score": score, "evidence": QUOTES[crit], "reasoning": "r"})
+        return NS(choices=[NS(message=NS(content=body))], model="fake-1",
+                  usage=NS(prompt_tokens=(len(sys_msg) + len(user)) // 4, completion_tokens=20))
+
+
+def _llm_patch(monkeypatch, tmp_path, client):
+    monkeypatch.setenv("MAID_CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(graph, "load_sec", lambda d, sector="tech": sec_quantitative(ROWS, _facts_with_assets, d, sector))
+    texts = {c: {"1": QUOTES["strategy_clarity"] + " Our products are sold worldwide.", "1a": "", "7": MDNA} for c in LABELS}
+    monkeypatch.setattr(graph, "load_filings", lambda d, sector="tech": (LABELS, texts, {}))
+    monkeypatch.setattr(graph, "make_client", lambda cfg: client)
+
+
+LLM = {"source": "sec", "sector": "staples", "scorer": "llm", "k": 2, "n_draws": 20}
+
+
+def test_scorer_validation():
+    for bad in ({"scorer": "llm"}, {"scorer": "llm", "source": "sec", "sector": "tech"}, {"scorer": "gpt"}, {"limit": -1}):
+        with pytest.raises(ValueError):
+            validate_settings(bad)
+    assert validate_settings(LLM)["limit"] == 0
+
+
+def test_graph_has_agent_nodes_in_order():
+    order = list(build_graph().get_graph().nodes)
+    got = [n for n in order if n.startswith("agent_")]
+    assert got == [f"agent_{k}" for k in LLM_CRITERIA]
+    assert order.index("score_qualitative") < order.index(got[0]) and order.index(got[-1]) < order.index("human_review")
+
+
+def test_agents_run_sequentially_and_report(monkeypatch, tmp_path):
+    fc = AgentClient()
+    _llm_patch(monkeypatch, tmp_path, fc)
+    g, cfg = build_graph(), {"configurable": {"thread_id": "t"}}
+    assert "__interrupt__" in g.invoke({"settings": LLM}, cfg)
+    crits = [next(c for c in RUBRICS if RUBRICS[c] in kw["messages"][0]["content"]) for kw in fc.calls]
+    assert crits == [c for c in LLM_CRITERIA for _ in range(6)]
+    s = run_demo(LLM, thread_id="t2")
+    assert len(s["qualitative"]) == 9 and s["criteria"] == STAPLES_CRITERIA + LLM_CRITERIA
+    assert list(s["agent_runs"]) == LLM_CRITERIA
+    assert "## Agents (sequential jobs, D21)" in s["report"] and "run one after another" in s["report"]
+    assert "scorer=llm, limit=0" in s["report"] and "No LLM scores" not in s["report"]
+
+
+def test_resume_from_cache(monkeypatch, tmp_path):
+    _llm_patch(monkeypatch, tmp_path, AgentClient())
+    first = run_demo(LLM)
+    monkeypatch.setattr(graph, "make_client", lambda cfg: AgentClient(empty=True))
+    second = run_demo(LLM, thread_id="again")
+    assert second["ranking"] == first["ranking"] and second["agent_runs"]["pricing_power"]["calls"] == 6
+
+
+def test_limit_two(monkeypatch, tmp_path):
+    _llm_patch(monkeypatch, tmp_path, AgentClient())
+    s = run_demo({**LLM, "limit": 2})
+    assert s["companies"] == ["Company 001", "Company 002"] and len(s["qualitative"]) == 6
+
+
+def test_no_ticker_in_prompts(monkeypatch, tmp_path):
+    fc = AgentClient()
+    _llm_patch(monkeypatch, tmp_path, fc)
+    run_demo(LLM)
+    assert fc.calls and not any(t in m["content"] for kw in fc.calls for m in kw["messages"] for t in LABELS.values())
+
+
+def test_demo_unchanged_by_agents():
+    s = run_demo({"n_draws": 50})
+    assert "## Agents" not in s["report"] and not s.get("agent_runs")
