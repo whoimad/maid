@@ -114,6 +114,12 @@ Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NP
 
 - Universe: the 61 companies in `data/universe/staples.csv` (plan 025, D19). No company is added or removed; the 19
   in `staples_excluded.csv` stay out.
+- **Deviation (2026-11-03, decided before any staples return or statistic was seen):** Kenvue (KVUE) has no price
+  history on Yahoo any more (0 rows for the window; KMB and MSFT fetched fine in the same call; probably delisted
+  after Kimberly-Clark's acquisition, not verified). Kenvue stays in the universe and in the ranking, so the CRITIC
+  weights and labels are as pre-registered, but it has no outcome and is left out of the correlation: **n = 60**.
+  This is the same "no Yahoo price, no place in the test" rule as the 19 excluded companies, applied after the freeze.
+  Owner decision.
 - Inputs: `revenue_growth`, `net_margin`, `fcf_margin`, `roa` from the latest 10-K filed on or before 2025-03-31;
   quantitative only, no LLM.
 - Ranking: CRITIC weights, then TOPSIS (graph defaults).
@@ -125,7 +131,7 @@ Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NP
 - Power (seeded simulation, bivariate normal, n = 61, 2000 trials): about 12% for a true correlation of 0.1, 32%
   for 0.2, 60% for 0.3. A null result is likely even if a modest signal exists, and will be reported as such.
 - The result is written up whatever it is, with summary statistics only (per-company returns stay local).
-- Run: `python scripts/backtest.py --sector staples`.
+- Run: `python scripts/backtest.py --sector staples --no-outcome KVUE`.
 
 ## Local-only data
 

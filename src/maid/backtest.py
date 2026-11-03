@@ -36,16 +36,21 @@ def window_return(adj_closes: dict[str, float], start: str, end: str) -> dict:
         return {"return": adj_closes[day] / base - 1, "last_day": day, "delisted": True}
 
 
-def backtest(weighting: str, returns: dict[str, float], n_draws: int = 50, sector: str = "tech") -> dict:
-    """Run the graph on real data (source="sec") and correlate TOPSIS scores with returns by ticker."""
+def backtest(weighting: str, returns: dict[str, float], n_draws: int = 50, sector: str = "tech",
+             no_outcome=()) -> dict:
+    """Run the graph on real data and correlate TOPSIS scores with returns; no_outcome tickers are ranked but left out."""
     from maid.demo import run_demo
 
     s = run_demo({"source": "sec", "sector": sector, "weighting": weighting, "n_draws": n_draws},
                  thread_id=f"backtest-{sector}-{weighting}")
     tickers = [s["tickers"][c] for c in s["companies"]]
-    if missing := [t for t in tickers if t not in returns]:
+    if unknown := [t for t in no_outcome if t not in tickers]:
+        raise ValueError(f"no_outcome tickers not in the universe: {unknown}")
+    if both := [t for t in no_outcome if t in returns]:
+        raise ValueError(f"no_outcome tickers have a return: {both}")
+    if missing := [t for t in tickers if t not in returns and t not in no_outcome]:
         raise ValueError(f"no return for {missing}")
     rows = [{"label": c, "ticker": s["tickers"][c], "topsis": s["scores"]["topsis"][s["companies"].index(c)],
-             "return": returns[s["tickers"][c]]} for c in s["ranking"]]
+             "return": returns[s["tickers"][c]]} for c in s["ranking"] if s["tickers"][c] not in no_outcome]
     stats = rank_vs_return([x["topsis"] for x in rows], [x["return"] for x in rows])
-    return {"weighting": weighting, "weights": s["weights"], "rows": rows, **stats}
+    return {"weighting": weighting, "weights": s["weights"], "rows": rows, "no_outcome": sorted(no_outcome), **stats}
