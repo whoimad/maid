@@ -97,6 +97,19 @@ class SecClient:
             return {"accn": accn, **parse_cover(self.fetch_text(f"{base}/{names[0]}", self.user_agent))}
         return self.cache.get_or_compute(DiskCache.key("sec-cover", cik, accn), get)
 
+    def filing_html(self, cik, accn: str) -> str:
+        """Primary document (HTML) of a filing, located via submissions (cached)."""
+        def get():
+            r = self.submissions(cik)["filings"]["recent"]
+            if accn not in r["accessionNumber"]:
+                raise ValueError(f"{accn} not in recent submissions of CIK {cik}")
+            i = r["accessionNumber"].index(accn)
+            if r["form"][i] != "10-K":
+                raise ValueError(f"{accn} of CIK {cik} is form {r['form'][i]!r}, not 10-K")
+            url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accn.replace('-', '')}/{r['primaryDocument'][i]}"
+            return self.fetch_text(url, self.user_agent)
+        return self.cache.get_or_compute(DiskCache.key("sec-doc", cik, accn), get)
+
     def tickers(self) -> dict:
         """Ticker/CIK table."""
         return self._cached("https://www.sec.gov/files/company_tickers_exchange.json")

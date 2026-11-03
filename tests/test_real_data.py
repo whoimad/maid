@@ -132,3 +132,28 @@ def test_read_staples_universe_real_file():
     rows = read_universe(SECTORS["staples"][0])
     assert len(rows) == 61 and len({r["ticker"] for r in rows}) == 61
     assert all(r["decision_date"] == "2025-03-31" for r in rows)
+
+
+def test_load_filings_anonymizes(monkeypatch):
+    from maid import real_data
+
+    html = (Path(__file__).parent / "fixtures/tenk/mini_10k.htm").read_text()
+    rows = [{"ticker": "ACME", "cik": "5", "decision_date": "2025-03-31"},
+            {"ticker": "ZZZZ", "cik": "6", "decision_date": "2025-03-31"}]
+    labels = anonymize(["ACME", "ZZZZ"])
+    meta = {lab: {"accn": f"A-{lab[-1]}"} for lab in labels}
+
+    class Client:
+        def submissions(self, cik):
+            return {"name": "ACME FOODS, Inc.", "formerNames": []}
+
+        def filing_html(self, cik, accn):
+            return html
+
+    monkeypatch.setattr(real_data, "load_sec", lambda d, sector="tech", client=None: (labels, {}, meta))
+    monkeypatch.setattr(real_data, "read_universe", lambda path=None: rows)
+    got_labels, texts, info = real_data.load_filings("2025-03-31", "tech", Client())
+    assert got_labels == labels
+    assert "Company 001 sells cereal" in texts["Company 001"]["1"]
+    assert "ACME" not in texts["Company 001"]["1"]
+    assert info["Company 001"]["replacements"] > 0 and info["Company 001"]["accn"] == "A-1"

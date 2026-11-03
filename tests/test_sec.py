@@ -137,3 +137,33 @@ def test_404_not_retried(no_network, monkeypatch):
     with pytest.raises(urllib.error.HTTPError):
         _get_json("http://x", "t t@e.com")
     assert len(calls) == 1
+
+
+def _sub(form="10-K"):
+    return {"filings": {"recent": {"accessionNumber": ["0000000001-25-000001"], "form": [form],
+                                   "filingDate": ["2025-02-01"], "primaryDocument": ["acme-20241231.htm"]}}}
+
+
+def test_filing_html_cached(tmp_path):
+    urls = []
+
+    def fake_text(url, ua):
+        urls.append(url)
+        return "<html></html>"
+
+    c = SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch=lambda u, ua: _sub(), fetch_text=fake_text)
+    assert c.filing_html(5, "0000000001-25-000001") == "<html></html>"
+    assert c.filing_html(5, "0000000001-25-000001") == "<html></html>"
+    assert len(urls) == 1 and urls[0].endswith("/5/000000000125000001/acme-20241231.htm")
+
+
+def test_filing_html_unknown_accn_raises(tmp_path):
+    c = SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch=lambda u, ua: _sub())
+    with pytest.raises(ValueError, match="not in recent"):
+        c.filing_html(5, "0000000009-25-000009")
+
+
+def test_filing_html_wrong_form_raises(tmp_path):
+    c = SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch=lambda u, ua: _sub("10-Q"))
+    with pytest.raises(ValueError, match="10-Q"):
+        c.filing_html(5, "0000000001-25-000001")

@@ -25,11 +25,13 @@ python scripts/weight_stability.py # spike #6 simulation
 - `src/maid/config.py`: settings from environment
 - `src/maid/xbrl.py`: point-in-time XBRL extraction (pure)
 - `src/maid/sec.py`: cached SEC EDGAR client
+- `src/maid/tenk.py`: 10-K HTML -> Items 1/1A/7 text, anonymization (pure)
 - `src/maid/universe.py`: universe selection rule (pure)
 - `src/maid/prices.py`: yfinance price layer (cached, local only)
 - `src/maid/real_data.py`: frozen universe (tech or staples) -> anonymized labels -> SEC criteria for the graph
 - `src/maid/backtest.py`: rank vs total return (Kendall/Spearman), quant-only baseline
 - `scripts/backtest.py`: run the backtest on a real universe (--sector tech|staples; prints only)
+- `scripts/fetch_filings.py`: fetch and check 10-K text coverage for a universe (prints only)
 - `scripts/select_universe.py`: select the tech/bank top 15 or the staples floor universe
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
