@@ -37,7 +37,8 @@ honor its STOP conditions, and update your row when done.
 | [026](026-staples-backtest.md) | Staples in the graph (`sector` setting, numeric labels), delisted-aware window return, pre-registered test in data.md; reviewer runs the real backtest | P1 | M | 025 | DONE (branch `feat/staples-backtest`, 25444eb; pre-registration commit 2d7e8e2 first; reviewed; merged; tech ranking unchanged, staples smoke run 61 rows) |
 | [027](027-staples-no-outcome-kvue.md) | `--no-outcome`: Kenvue ranked but left out of the correlation (no Yahoo history); dated deviation in data.md | P1 | S | 026 | DONE (branch `fix/backtest-no-outcome`, 172905b; deviation commit 9ccc26a first; reviewed; merged `99ea26d`; real run: primary Kendall tau −0.096, p = 0.28, n = 60) |
 | [028](028-staples-results-doc.md) | Backtest #2 write-up: `docs/research/backtest-staples-results.md` (summary stats only) | P1 | S | 027 | DONE (branch `docs/staples-results`, 5a2573f; reviewed: text identical to the plan; merged `b6bb576`) |
-| [029](029-tenk-text-ingest.md) | 10-K text: fetch the decision-date 10-K, extract Items 1/1A/7 (TOC- and cross-reference-safe), anonymize names and ticker; coverage script | P1 | M | 027 | IN PROGRESS (executor dispatched at `b6bb576`; reviewer runs `scripts/fetch_filings.py --sector staples` after merge) |
+| [029](029-tenk-text-ingest.md) | 10-K text: fetch the decision-date 10-K, extract Items 1/1A/7 (TOC- and cross-reference-safe), anonymize names and ticker; coverage script | P1 | M | 027 | DONE (branch `feat/tenk-text`, c67e016; reviewed after 1 revision: hyphenated names ("Coca-Cola"); merged `20a063a`; real fetch: 60 ok, CLX short (MD&A by reference), 10 companies weakly anonymized → plan 030) |
+| [030](030-tenk-text-v2.md) | Text v2: "Item 1.A." headings, MD&A by reference (exhibit), anonymization v2 (state tags, &, accents, apostrophes, initials, core names, alias list), per-criterion slices with a 24k-token budget | P1 | M | 029 | IN PROGRESS (executor dispatched at `20a063a`; reviewer re-runs `fetch_filings.py --sector staples` after merge) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -118,9 +119,15 @@ evidence); **pilot of 10 companies** (first 10 labels, a fixed rule) at K = 5 be
 Ollama** (OpenAI-compatible API) for development and as the older-cutoff leakage comparison, **DeepSeek** for the
 main run (extends D14; record as D20 in plan 030). Laptop GPU: RTX 2070 Max-Q, 8 GB, so 7–8B models at 4-bit;
 context size must be set explicitly and over-long text refused, never silently truncated.
-- 029 text ingest (no LLM) → 030 scorer (OpenAI-compatible client, rubrics, cache key with model + prompt version +
-  text hash, graph setting) → 031 leakage probes (recognition, date-only recall; local vs DeepSeek) → 032
-  pre-registered comparison against the quant-only baseline (n = 60). 031 and 032 are fixed before any full run.
+- 029 text ingest (no LLM) → 030 text v2 (fixes from the real fetch) → 031 scorer (OpenAI-compatible client,
+  rubrics, cache key with model + prompt version + extractor version + text hash, graph setting, truncation guard via
+  reported prompt tokens) → 032 leakage probes (recognition, date-only recall; local vs DeepSeek) → 033
+  pre-registered comparison against the quant-only baseline (n = 60). 032 and 033 are fixed before any full run.
+- Ollama facts (checked in its docs, 2026-11-03): default context 4k tokens below 24 GiB VRAM; the OpenAI-compatible
+  API cannot set the context size (use `OLLAMA_CONTEXT_LENGTH` or a Modelfile `PARAMETER num_ctx`); `ollama ps`
+  shows the allocated context; `response_format` and `seed` are supported.
+- Real fetch (2026-11-03): median MD&A ~15.5k tokens, max ~64k (PEP); KO's `www.coca-colacompany.com` URL survives
+  anonymization (a recognition cue for 032).
 
 ## Findings considered and rejected
 
