@@ -134,6 +134,18 @@ Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NP
 - Run: `python scripts/backtest.py --sector staples --no-outcome KVUE`.
 - Result (2026-11-03): no association (primary Kendall tau −0.10, p = 0.28, n = 60). See [backtest-staples-results.md](../research/backtest-staples-results.md).
 
+### 10-K text for the qualitative scorer (plan 029)
+
+- Source: primary document of the same 10-K accession as the numbers (`SecClient.filing_html`, via submissions).
+- Sections: Items 1, 1A and 7 (`src/maid/tenk.py`, `EXTRACTOR_VERSION` bumped when rules change).
+- Table of contents repeats every heading: the real section is the longest span from an "Item N" heading to the next end heading.
+- A heading must start a line and be followed by the item's title words, so cross-references ("see Item 8") do not count.
+- Headings may be split one word per HTML element, so whitespace (including newlines) is allowed between "Item", the number and the title.
+- The hidden inline-XBRL `ix:header` block is dropped; `Item 1` does not match `Item 1A`, nor `Item 7` match `Item 7A`.
+- Sections are collapsed to single spaces so quotes can be checked later with plain substring tests.
+- Anonymization: the registrant's current and former names (minus legal suffixes) and the ticker are replaced by the label. Known limitation: brand names and short forms (for example "P&G") are not removed; plan 031 measures whether the model recognises companies.
+- Downloads are cached under `data/cache` (local only). Run `python scripts/fetch_filings.py --sector staples` to fetch and check coverage.
+
 ## Local-only data
 
 Downloads and derived files live under `data/cache/` and `data/raw/` (both gitignored) and are never committed or pushed (owner rule). Only `data/universe/*.csv` is committed. Tests use small hand-made JSON fixtures under `tests/fixtures/`, never real downloads, and never touch the network.

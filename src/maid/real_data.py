@@ -46,3 +46,32 @@ def load_sec(decision_date: str, sector: str = "tech", client=None) -> tuple[dic
     if sector not in SECTORS:
         raise ValueError(f"unknown sector: {sector!r}")
     return sec_quantitative(read_universe(SECTORS[sector][0]), (client or SecClient()).companyfacts, decision_date, sector)
+
+
+def company_filing(client, cik, accn: str, ticker: str, label: str) -> tuple[dict, int]:
+    """({"1", "1a", "7"} anonymized text, replacement count) for one company's 10-K."""
+    from maid import tenk
+
+    sections = tenk.extract_sections(client.filing_html(cik, accn))
+    sub = client.submissions(cik)
+    names = [sub["name"]] + [f["name"] for f in sub.get("formerNames", [])]
+    out, total = {}, 0
+    for k, text in sections.items():
+        out[k], n = tenk.anonymize_text(text, names, ticker, label)
+        total += n
+    return out, total
+
+
+def load_filings(decision_date: str, sector: str = "tech", client=None) -> tuple[dict, dict, dict]:
+    """(label -> ticker, label -> {"1", "1a", "7"} anonymized text, label -> {accn, replacements}) for the 10-K in use."""
+    from maid.sec import SecClient
+
+    client = client or SecClient()
+    labels, _, meta = load_sec(decision_date, sector, client)
+    ciks = {r["ticker"]: int(r["cik"]) for r in read_universe(SECTORS[sector][0])}
+    texts, info = {}, {}
+    for label, ticker in labels.items():
+        accn = meta[label]["accn"]
+        texts[label], n = company_filing(client, ciks[ticker], accn, ticker, label)
+        info[label] = {"accn": accn, "replacements": n}
+    return labels, texts, info
