@@ -17,6 +17,8 @@ python scripts/weight_stability.py # spike #6 simulation
 - `src/maid/demo.py`: runnable demo (`python -m maid.demo`)
 - `src/maid/demo_data.py`: synthetic demo dataset
 - `src/maid/scoring.py`: stub scorer, evidence check
+- `src/maid/llm.py`: LLM scorer (OpenAI-compatible, cached K samples, quote check, truncation guard)
+- `src/maid/rubrics.py`: scoring prompts and rubrics (PROMPT_VERSION)
 - `src/maid/matrix.py`: overrides -> decision matrix
 - `src/maid/gui_data.py`: pure GUI data helpers
 - `app/streamlit_app.py`: Streamlit GUI
@@ -32,6 +34,7 @@ python scripts/weight_stability.py # spike #6 simulation
 - `src/maid/backtest.py`: rank vs total return (Kendall/Spearman), quant-only baseline
 - `scripts/backtest.py`: run the backtest on a real universe (--sector tech|staples; prints only)
 - `scripts/fetch_filings.py`: fetch and check 10-K text coverage for a universe (prints only)
+- `scripts/score_pilot.py`: score the first N companies with the LLM scorer; writes a local review table
 - `scripts/select_universe.py`: select the tech/bank top 15 or the staples floor universe
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)

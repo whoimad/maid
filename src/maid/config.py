@@ -10,11 +10,16 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    api_key: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""), repr=False)
-    base_url: str = field(
-        default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    api_key: str = field(
+        default_factory=lambda: os.getenv("LLM_API_KEY") or os.getenv("DEEPSEEK_API_KEY", ""), repr=False
     )
-    model: str = field(default_factory=lambda: os.getenv("DEEPSEEK_MODEL", "deepseek-flash"))
+    base_url: str = field(
+        default_factory=lambda: os.getenv("LLM_BASE_URL")
+        or os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    )
+    model: str = field(
+        default_factory=lambda: os.getenv("LLM_MODEL") or os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
+    )
     decision_date: str = field(default_factory=lambda: os.getenv("DECISION_DATE", "2025-03-31"))
     cache_dir: Path = field(default_factory=lambda: Path(os.getenv("MAID_CACHE_DIR", "data/cache")))
     sec_user_agent: str = field(default_factory=lambda: os.getenv("SEC_USER_AGENT", ""))
