@@ -48,7 +48,7 @@ def test_non_dict_payload_is_rejected():
 def test_graph_records_overrides_after_resume():
     graph = build_graph()
     cfg = {"configurable": {"thread_id": "t-review"}}
-    graph.invoke({"companies": ["Company A"]}, cfg)
+    graph.invoke({"companies": ["Company A", "Company B"]}, cfg)
     final = graph.invoke(Command(resume={"overrides": []}), cfg)
     assert final["overrides"] == [] and "report" in final
 
