@@ -60,10 +60,17 @@ This session (2026-11-03):
   - the pre-registration text added to `data.md` as its **first commit**.
 - Power at n = 61 (seeded simulation, 2000 trials): 12% / 32% / 60% for rho 0.1 / 0.2 / 0.3.
 
+## Update (later on 2026-11-03)
+
+- Plan 026 DONE and merged (`f51c9d0`, index `783090c`). Pre-registration commit `2d7e8e2` comes first. 143 tests
+  pass. Worktrees removed.
+- First real staples backtest attempt: exit 1. Yahoo returned no data for ACI, ADM, BF-B, BG and KVUE, while the other
+  56 succeeded and are cached. This looks like rate limiting (ADM and BG trade normally). Rerun later. Output goes to
+  `notes/scratch/staples_backtest.txt` (local). No result has been seen yet.
+
 ## Next
 
-1. Review and merge plan 026: re-run its done criteria, check the pre-registration commit comes first, read the
-   tests.
+1. (done) Review and merge plan 026.
 2. **The advisor runs the real backtest** (the executor is forbidden to):
    `cd /home/imad/maid && python scripts/backtest.py --sector staples`. If Yahoo rate-limits, wait and rerun
    (successes are cached; test with GIS first).
