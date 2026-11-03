@@ -48,30 +48,54 @@ def load_sec(decision_date: str, sector: str = "tech", client=None) -> tuple[dic
     return sec_quantitative(read_universe(SECTORS[sector][0]), (client or SecClient()).companyfacts, decision_date, sector)
 
 
-def company_filing(client, cik, accn: str, ticker: str, label: str) -> tuple[dict, int]:
-    """({"1", "1a", "7"} anonymized text, replacement count) for one company's 10-K."""
+def read_aliases(path=Path("data/universe/aliases.csv")) -> dict[str, list[str]]:
+    """ticker -> extra name forms that the registrant name rules cannot derive."""
+    out: dict[str, list[str]] = {}
+    with open(path, newline="") as f:
+        for r in csv.DictReader(f):
+            out.setdefault(r["ticker"], []).append(r["alias"])
+    return out
+
+
+def company_filing(client, cik, accn: str, ticker: str, label: str, aliases=()) -> tuple[dict, dict]:
+    """({"1", "1a", "7"} anonymized text, {"replacements", "mdna_source", "residual"}) for one company's 10-K."""
+    import re
+
     from maid import tenk
 
     sections = tenk.extract_sections(client.filing_html(cik, accn))
     sub = client.submissions(cik)
     names = [sub["name"]] + [f["name"] for f in sub.get("formerNames", [])]
+    source = "body"
+    if len(sections["7"].split()) < tenk.MIN_WORDS:
+        r = sub["filings"]["recent"]
+        primary = r["primaryDocument"][r["accessionNumber"].index(accn)]
+        docs = [d for d in client.filing_documents(cik, accn)
+                if d["name"] != primary and not re.match(r"R\d+\.htm$", d["name"])]
+        for d in sorted(docs, key=lambda d: -d["size"])[:3]:
+            mdna = tenk.find_mdna(client.document_html(cik, accn, d["name"]))
+            if len(mdna.split()) >= tenk.MIN_WORDS:
+                sections["7"], source = mdna, f"exhibit:{d['name']}"
+                break
     out, total = {}, 0
     for k, text in sections.items():
-        out[k], n = tenk.anonymize_text(text, names, ticker, label)
+        out[k], n = tenk.anonymize_text(text, names, ticker, label, aliases)
         total += n
-    return out, total
+    residual = tenk.residual_mentions(" ".join(out.values()), names, aliases)
+    return out, {"replacements": total, "mdna_source": source, "residual": residual}
 
 
 def load_filings(decision_date: str, sector: str = "tech", client=None) -> tuple[dict, dict, dict]:
-    """(label -> ticker, label -> {"1", "1a", "7"} anonymized text, label -> {accn, replacements}) for the 10-K in use."""
+    """(label -> ticker, label -> {"1", "1a", "7"} anonymized text, label -> {accn, replacements, mdna_source, residual}) for the 10-K in use."""
     from maid.sec import SecClient
 
     client = client or SecClient()
     labels, _, meta = load_sec(decision_date, sector, client)
     ciks = {r["ticker"]: int(r["cik"]) for r in read_universe(SECTORS[sector][0])}
+    aliases = read_aliases()
     texts, info = {}, {}
     for label, ticker in labels.items():
         accn = meta[label]["accn"]
-        texts[label], n = company_filing(client, ciks[ticker], accn, ticker, label)
-        info[label] = {"accn": accn, "replacements": n}
+        texts[label], i = company_filing(client, ciks[ticker], accn, ticker, label, aliases.get(ticker, ()))
+        info[label] = {"accn": accn, **i}
     return labels, texts, info

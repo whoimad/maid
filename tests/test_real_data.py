@@ -145,10 +145,14 @@ def test_load_filings_anonymizes(monkeypatch):
 
     class Client:
         def submissions(self, cik):
-            return {"name": "ACME FOODS, Inc.", "formerNames": []}
+            return {"name": "ACME FOODS, Inc.", "formerNames": [], "filings": {"recent": {
+                "accessionNumber": ["A-1", "A-2"], "primaryDocument": ["a.htm", "a.htm"]}}}
 
         def filing_html(self, cik, accn):
             return html
+
+        def filing_documents(self, cik, accn):
+            return []
 
     monkeypatch.setattr(real_data, "load_sec", lambda d, sector="tech", client=None: (labels, {}, meta))
     monkeypatch.setattr(real_data, "read_universe", lambda path=None: rows)
@@ -157,3 +161,39 @@ def test_load_filings_anonymizes(monkeypatch):
     assert "Company 001 sells cereal" in texts["Company 001"]["1"]
     assert "ACME" not in texts["Company 001"]["1"]
     assert info["Company 001"]["replacements"] > 0 and info["Company 001"]["accn"] == "A-1"
+
+
+def test_company_filing_mdna_by_reference():
+    from maid import real_data
+
+    fx = Path(__file__).parent / "fixtures/tenk"
+    docs = {"byref_10k.htm": (fx / "byref_10k.htm").read_text(), "byref_d2.htm": (fx / "byref_d2.htm").read_text()}
+
+    class Client:
+        def submissions(self, cik):
+            return {"name": "BLEACHCO CO /DE/", "formerNames": [], "filings": {"recent": {
+                "accessionNumber": ["B-1"], "primaryDocument": ["byref_10k.htm"]}}}
+
+        def filing_html(self, cik, accn):
+            return docs["byref_10k.htm"]
+
+        def filing_documents(self, cik, accn):
+            return [{"name": "byref_10k.htm", "size": 9}, {"name": "R2.htm", "size": 99},
+                    {"name": "byref_d2.htm", "size": 5}]
+
+        def document_html(self, cik, accn, name):
+            assert name == "byref_d2.htm"
+            return docs[name]
+
+    out, info = real_data.company_filing(Client(), 5, "B-1", "BLCH", "Company 001")
+    assert info["mdna_source"] == "exhibit:byref_d2.htm"
+    assert len(out["7"].split()) >= 1000
+    assert out["1a"] and "Resin costs" in out["1a"]
+    assert "BleachCo" not in out["1"] and info["residual"] == 0
+
+
+def test_read_aliases_real_file():
+    from maid.real_data import read_aliases
+
+    a = read_aliases()
+    assert a["PG"] == ["P&G", "Procter & Gamble"] and a["EL"] == ["Estée Lauder", "Lauder"] and len(a) == 16

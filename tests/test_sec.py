@@ -167,3 +167,32 @@ def test_filing_html_wrong_form_raises(tmp_path):
     c = SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch=lambda u, ua: _sub("10-Q"))
     with pytest.raises(ValueError, match="10-Q"):
         c.filing_html(5, "0000000001-25-000001")
+
+
+def test_filing_documents_cached_and_filtered(tmp_path):
+    calls = []
+
+    def fake(url, ua):
+        calls.append(url)
+        return {"directory": {"item": [{"name": "a.htm", "size": "1200"}, {"name": "b.htm", "size": ""},
+                                       {"name": "x.xml", "size": "5"}, {"name": "c.htm"}]}}
+
+    c = SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch=fake)
+    want = [{"name": "a.htm", "size": 1200}, {"name": "b.htm", "size": 0}, {"name": "c.htm", "size": 0}]
+    assert c.filing_documents(5, "0000000001-25-000001") == want
+    assert c.filing_documents(5, "0000000001-25-000001") == want
+    assert len(calls) == 1 and calls[0].endswith("/5/000000000125000001/index.json")
+
+
+def test_document_html_cached_per_name(tmp_path):
+    urls = []
+
+    def fake_text(url, ua):
+        urls.append(url)
+        return f"<html>{url[-6:]}</html>"
+
+    c = SecClient(cache=DiskCache(tmp_path), user_agent="t t@example.com", fetch_text=fake_text)
+    assert c.document_html(5, "0000000001-25-000001", "d2.htm") == "<html>d2.htm</html>"
+    assert c.document_html(5, "0000000001-25-000001", "d2.htm") == "<html>d2.htm</html>"
+    assert c.document_html(5, "0000000001-25-000001", "d3.htm") == "<html>d3.htm</html>"
+    assert len(urls) == 2 and urls[0].endswith("/5/000000000125000001/d2.htm")
