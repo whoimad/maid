@@ -11,7 +11,7 @@ Preparing to explain the project? Start with [docs/INTERVIEW.md](docs/INTERVIEW.
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env   # add DEEPSEEK_API_KEY
+cp .env.example .env   # local LLM via Ollama; no API key needed (D21)
 pytest
 ruff check .
 ```

@@ -11,6 +11,8 @@ from maid.state import CriterionScore
 from maid.tenk import EXTRACTOR_VERSION, approx_tokens
 
 QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", " ": " "})
+LOCAL_HOSTS = ("http://localhost", "http://127.0.0.1")
+MAX_QUOTE = 400
 MIN_PROMPT_RATIO = 0.7  # reported prompt tokens below this share of the estimate means the server truncated
 
 
@@ -55,8 +57,8 @@ def parse_reply(content: str, text: str) -> tuple[int, str, str]:
     ev = d.get("evidence")
     if not isinstance(ev, str) or not normalize(ev):
         raise ValueError("evidence missing or empty")
-    if len(normalize(ev)) > 300:
-        raise ValueError("evidence longer than 300 characters")
+    if len(normalize(ev)) > MAX_QUOTE:
+        raise ValueError(f"evidence longer than {MAX_QUOTE} characters")
     if not quote_in_text(ev, text):
         raise ValueError("evidence is not a verbatim quote from the excerpt")
     r = d.get("reasoning")
@@ -113,8 +115,7 @@ class LLMScorer:
 
 
 def make_client(settings) -> OpenAI:
-    """OpenAI client for the configured endpoint; a key is required unless the server is local."""
-    local = settings.base_url.startswith(("http://localhost", "http://127.0.0.1"))
-    if not settings.api_key and not local:
-        raise ValueError("no LLM API key: set LLM_API_KEY or DEEPSEEK_API_KEY")
-    return OpenAI(base_url=settings.base_url, api_key=settings.api_key or "none", timeout=600)
+    """OpenAI-compatible client for a local server only (D21: no paid API)."""
+    if not settings.base_url.startswith(LOCAL_HOSTS):
+        raise ValueError(f"local models only (D21): LLM_BASE_URL must start with {' or '.join(LOCAL_HOSTS)}")
+    return OpenAI(base_url=settings.base_url, api_key=settings.api_key or "ollama", timeout=600)

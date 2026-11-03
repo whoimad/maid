@@ -18,6 +18,7 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Mitigation:** anonymize names, keep numbers, probe for recalled post-date facts, ablate with an older open-weight model.
 - **Cost:** anonymization may reduce scoring quality; the leak cannot be fully excluded and is stated as a limitation.
 - **Changed 2026-11-02:** was 2024-12-31; moved by D17.
+- **Changed 2026-11-03:** with D21 the scorer is Qwen2.5 7B, released 2024-09-19, before the decision date, so its training data cannot contain evaluation-window events. The remaining risk is recognition: the model may identify an anonymized company from older knowledge (probed later).
 
 ## D4. Data-driven weights (entropy, CRITIC), no AHP in v1
 - **Alternatives:** AHP with my own pairwise judgments; fixed equal weights.
@@ -78,7 +79,7 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Alternatives:** Claude or GPT models; an older open-weight model with an earlier cutoff.
 - **Why:** budget (SCOPE §8); cheapest option with JSON output, tool calls and a 1M context ([model-cutoff.md](../research/model-cutoff.md) §5).
 - **Cost:** no published knowledge cutoff, likely after the 2025-03-31 decision date (look-ahead risk, D3); the alias was re-pointed on 2026-10-17, so the dated version must be pinned and logged per run (not done yet).
-- **Status:** decided for v1; older-model ablation OPEN (SCOPE §9).
+- **Status:** superseded 2026-11-03 by D21 (local models only).
 
 ## D15. No trained predictive (ML) model
 - **Alternatives:** train a regressor/classifier from features to 2025 returns.
@@ -119,4 +120,20 @@ Format: decision, alternatives, why, cost. Written so each can be defended in an
 - **Cost:** a 7–8B model at 4-bit is weaker than DeepSeek, so disagreement mixes capability with leakage; Ollama's
   default 4k context would silently truncate prompts, so the scorer refuses any reply whose reported prompt tokens are
   below 70% of the estimate (`ContextTruncated`) and such replies are never cached.
-- **Status:** decided 2026-11-03 (extends D14). Pilot: 10 companies, K = 5, reviewed by the owner before all 61 run.
+- **Status:** superseded 2026-11-03 by D21 (no DeepSeek main run).
+
+## D21. Local models only; agents run as sequential jobs
+- **Alternatives:** a paid API (DeepSeek) for the main run (D14, D20); parallel requests to the local server
+  (Ollama `OLLAMA_NUM_PARALLEL`) or a LangGraph `Send` fan-out per company and criterion.
+- **Why:** the owner will not pay for an API for an exploratory project. One local 7B model at 4-bit with a 32k
+  context (Qwen2.5 7B via Ollama) already fills the 8 GB laptop GPU (6.4 GB allocated), so parallel requests would
+  only queue or run out of memory. Qwen2.5 was released on 2024-09-19 (Qwen2.5 GitHub README), before the 2025-03-31
+  decision date, which removes outcome leakage from the model's training data (D3).
+- **How it works:** MAID stays conceptually multi-agent: each criterion agent (pricing power, strategy clarity,
+  capital allocation) has its own rubric, input slice of the 10-K and output contract (score 1–9 with a verbatim
+  quote). The agents run one after another as jobs: one agent scores every company, then the next agent starts. Every
+  reply is cached on disk, so an interrupted job resumes where it stopped. The scorer refuses non-local servers.
+- **Cost:** no parallelism. Measured on 2026-11-03: about 10–20 s per call, so the 10-company pilot (K = 5) takes
+  about an hour and all 61 companies take about 4–5 hours. A 7B model is weaker than a hosted model, so scores are
+  noisier and the human review carries more weight. Reported as a limitation of the project.
+- **Status:** decided 2026-11-03 by the owner.

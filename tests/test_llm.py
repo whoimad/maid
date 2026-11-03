@@ -7,7 +7,7 @@ import pytest
 from maid.cache import DiskCache
 from maid.config import get_settings
 from maid.llm import ContextTruncated, LLMScorer, ScoringError, make_client, parse_reply, quote_in_text
-from maid.rubrics import RUBRICS, build_messages
+from maid.rubrics import RUBRICS, SYSTEM, build_messages
 
 TEXT = "We raised prices 5% while volume grew 2%. Costs were passed through to customers."
 OK = json.dumps({"score": 8, "evidence": "We raised prices 5% while volume grew 2%.", "reasoning": "r"})
@@ -109,5 +109,22 @@ def test_cache_reuse_and_temperature_key(tmp_path):
 def test_make_client(tmp_path):
     s = get_settings()
     with pytest.raises(ValueError):
-        make_client(dataclasses.replace(s, api_key="", base_url="https://api.example.com"))
-    assert make_client(dataclasses.replace(s, api_key="", base_url="http://localhost:11434/v1")) is not None
+        make_client(dataclasses.replace(s, base_url="https://api.example.com"))
+    assert make_client(dataclasses.replace(s, base_url="http://localhost:11434/v1")) is not None
+    assert make_client(dataclasses.replace(s, base_url="http://127.0.0.1:11434/v1")) is not None
+
+
+def test_quote_length_limit():
+    long = "Costs rose. " * 40
+    for n, ok in ((350, True), (401, False)):
+        q = long[:n].strip()
+        while len(q) < n:
+            q += "x"
+        text = "Intro. " + q + " End."
+        reply = json.dumps({"score": 5, "evidence": q})
+        if ok:
+            assert parse_reply(reply, text)[0] == 5
+        else:
+            with pytest.raises(ValueError):
+                parse_reply(reply, text)
+    assert "400 characters" in SYSTEM

@@ -18,10 +18,7 @@ Every LLM score carries cited evidence and is reviewable by the human.
   `architecture/data.md`).
 - Evaluation window: 2025-04-01 to 2026-03-31.
 - Company names are anonymized (Company A, B, …) in scoring prompts to reduce memorized knowledge.
-- DeepSeek publishes no knowledge cutoff, so the cutoff is likely later than the decision date
-  (see `docs/research/model-cutoff.md`). Decision: pin one model version (`deepseek-flash`),
-  document this as a known limitation, and run an ablation with an older open-weight model
-  once its availability and cutoff are verified.
+- The scorer is a local open-weight model, Qwen2.5 7B, released 2024-09-19, before the decision date (decision D21 in architecture/decisions.md). Its training data cannot contain evaluation-window events; the remaining risk is that it recognizes an anonymized company from older knowledge.
 
 ## 4. Universe
 - Phase 1: US **technology** sector, 15 companies. Phase 2: US **banks**, 15 companies.
@@ -57,11 +54,11 @@ Trading advice, portfolio construction, real-time data, multi-sector joint ranki
 human-set weights (AHP) in this version.
 
 ## 8. Constraints
-- Budget: Claude Pro plan; DeepSeek API for the pipeline. Cache everything, small test universe first.
+- Budget: no paid API. Local models only (Ollama on an 8 GB laptop GPU), so agents run as sequential jobs, not in parallel (D21). Cache everything, small pilot first.
 - Workflow: issue per component, branch per issue, small PRs into `main`, conventional commits.
 
 ## 9. Open questions / spikes
-- [ ] Verify the older-model ablation candidate (e.g. DeepSeek-V3-0324, Qwen2.5-72B): availability, price, cutoff
+- [x] Older-model candidate: Qwen2.5 7B (released 2024-09-19) is now the only scorer model (D21)
 - [ ] Verify key claims in `docs/research/` against full papers (agents read abstracts only)
 - [ ] Final criteria list for tech (quantitative vs. qualitative split) and rubric drafts (quantitative part: see architecture/data.md)
 - [ ] Criteria list for banks (e.g. CET1, NIM, efficiency ratio, NPL ratio instead of leverage/FCF)
