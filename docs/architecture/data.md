@@ -132,6 +132,7 @@ Status: OPEN. SCOPE lists CET1, NIM, efficiency ratio and NPL ratio. CET1 and NP
   for 0.2, 60% for 0.3. A null result is likely even if a modest signal exists, and will be reported as such.
 - The result is written up whatever it is, with summary statistics only (per-company returns stay local).
 - Run: `python scripts/backtest.py --sector staples --no-outcome KVUE`.
+- Result (2026-11-03): no association (primary Kendall tau −0.10, p = 0.28, n = 60). See [backtest-staples-results.md](../research/backtest-staples-results.md).
 
 ## Local-only data
 
