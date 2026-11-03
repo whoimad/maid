@@ -1,10 +1,10 @@
-# Session handoff (2026-11-02, end of day)
+# Session handoff (2026-11-03)
 
 Start here. Then read, in this order:
-1. `notes/MEMO.md` (local only, not on GitHub): the owner's high-level project memo. It has the full story and the
-   per-company tech results.
+1. `notes/MEMO.md` (local only, not on GitHub): the owner's high-level project memo. **Not yet updated for 025/026.**
 2. `plans/README.md`: status of every plan.
-3. `docs/architecture/data.md`: the real-data spec.
+3. `docs/architecture/data.md`: the real-data spec, including the staples universe and (after 026) the
+   pre-registered staples test.
 
 Workflow: the `/improve` skill. The advisor writes plans in `plans/`, executor subagents implement them in
 worktrees, and the advisor reviews and merges into the local branch `integration/prototype`. Push only when the
@@ -12,130 +12,77 @@ owner says so.
 
 ## Git state
 
-- Local `integration/prototype` is ahead of GitHub (`9d7def1`). The result note
-  `docs/research/backtest-quant-only-results.md` and this handoff are **not pushed yet**. Ask before pushing. The
-  push updates PR #16.
-- PR #16 (`integration/prototype` -> `main`) is open and green. The owner merges it.
-- No stale worktrees. Tests: 115 passed, 1 skipped; ruff clean.
+- Local `integration/prototype` at `4b51ec6`. GitHub has `5b3b5e7`. **Not pushed:** plan 025, the 025 merge
+  (`4bf145c`), plan 026. Ask before pushing (the push updates PR #16).
+- Tests: 135 passed, 1 skipped; ruff clean.
+- **Plan 026 executor was still running when this was written**: branch `feat/staples-backtest`, worktree under
+  `.claude/worktrees/agent-*`, based on `4b51ec6`. If the session died, check `git worktree list` and
+  `git log 4b51ec6..feat/staples-backtest`. Review it against the plan's done criteria before merging. If it's
+  half done, re-dispatch from the plan rather than patching by hand.
 
 ## Owner decisions (do not re-ask)
 
-Earlier sessions:
-- **Decision date** 2025-03-31. **Evaluation window** 2025-04-01 to 2026-03-31.
-- **Point-in-time rule:** use the latest 10-K filed on or before the decision date.
-- **Universe:** picked by a rule only, never by hand or by an LLM.
-- **Data:** real data stays local. Only `data/universe/*.csv` is committed.
+Earlier sessions: decision date 2025-03-31; evaluation window 2025-04-01..2026-03-31; latest 10-K filed on or before
+the date; universe by rule only; real data stays local (only `data/universe/*.csv` committed); net margin for
+everyone (D18); tech null result documented as a process result; staples sector by SIC (food/bev 2000–2099, tobacco
+2100–2199, household 2840–2844, grocery 5411); $1bn floor; ROA as the fourth staples criterion; one set of fallback
+tags for everyone; share-count fix; survivorship rule (delisted included only if Yahoo has prices); test fixed
+before the run.
 
-This session:
-1. **Net margin replaces operating margin** for everyone (D18). IBM has no operating income in XBRL, and the owner
-   wanted the simplest rule with no per-company exceptions.
-2. **The tech result is documented as a process result, not hidden.**
-   - Result: quant-only, 15 companies, primary CRITIC + Kendall tau = +0.05 (p = 0.85).
-   - Committed note: `docs/research/backtest-quant-only-results.md` (summary stats only; per-company returns stay
-     local).
-   - Why it was a weak test: power at n = 15 is tiny (9% for rho = 0.2), it is one AI-driven year, and CRITIC weights
-     measure dispersion, not relevance.
-3. **Next sector: consumer staples** (the owner thinks tech is too volatile). Defined by SEC SIC code:
-   - food and beverages 2000–2099
-   - tobacco 2100–2199
-   - household and personal products 2840–2844
-   - grocery stores 5411
+This session (2026-11-03):
+1. **Accept losing Kellanova.** One rule for everyone. No deal-price exceptions for takeover targets.
+2. **Share-source order stays as decided:** companyfacts dei → `CommonStockSharesOutstanding` → weighted average →
+   10-K cover. Seven staples (TAP, EL, MKC, HRL, SAM, TR, UTZ) use the weighted average (TAP 208.8M vs 192.7M on
+   the cover). Moving the cover earlier would reorder the frozen banks list (FCNCA 11th → 13th). This was the
+   advisor's call in review, under the "one rule" principle. Recorded in `data.md`.
+3. **Three more fallback tags, appended last** (advisor's call in review, same principle as the owner's decision on
+   fallback tags): capex `PaymentsToAcquireOtherPropertyPlantAndEquipment`, `PaymentsToAcquireOtherProductiveAssets`;
+   operating cash flow `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`. They rescued Smithfield and
+   Primo Brands. Tech values were checked and are unchanged.
 
-   Known side effects, accepted as written:
-   - Out: Walmart, Costco, Target, Dollar General (5331), Sysco (5140), Kimberly-Clark (2670).
-   - In: Ecolab.
+## What was done
 
-   Rejected sectors: energy (driven by geopolitics), utilities (regulated, move with interest rates), pharma
-   (biotechs, policy shocks). Medical devices is the backup sector.
-4. **One set of fallback tags for everyone.** Earlier tags still win where present, so the tech numbers do not
-   change:
-   - revenue: add `RevenueFromContractWithCustomerIncludingAssessedTax` last in `xbrl.REVENUE` (fixes Kraft Heinz,
-     Smucker, Lamb Weston);
-   - net income: `["NetIncomeLoss", "ProfitLoss"]` (fixes Monster, Estée Lauder, Zevia).
-5. **Size floor: market cap of at least $1bn** on 2025-03-31. Expect about 55 companies (about 58 with the
-   delisted ones).
-6. **Fourth staples criterion: return on assets** = net income / total assets, where total assets is the instant
-   fact `Assets` at the 10-K period end. It replaces `rd_intensity`, which most staples don't report. Gross margin
-   and asset turnover were rejected because they mostly reflect the business model. So the staples criteria are
-   `revenue_growth, net_margin, fcf_margin, roa`.
-7. **Share-count fix**, one rule for everyone, in `universe.shares_outstanding`:
-   - skip a source whose latest value is zero or was filed more than about 15 months before the date, and try the
-     next source;
-   - add a fourth source: the cover-page `dei:EntityCommonStockSharesOutstanding` read from the 10-K's own XBRL
-     instance document (with class dimensions, summed over classes).
+- **Plan 025 DONE**, merged `4bf145c`. Staples universe frozen:
+  - `data/universe/staples.csv`: **61 companies**. All 16 sanity names are in. WMT, COST, UL and BTI are out.
+  - `data/universe/staples_excluded.csv`: 19 companies. 13 have no Yahoo price (Kellanova, TreeHouse, WK Kellogg,
+    SunOpta, Olaplex, Vector, Duckhorn, Primo Water, ...). 6 are small companies with criteria gaps.
+  - Near the floor: NGVC at $0.92bn (out). The smallest selected company is $1.05bn.
+  - Counts: 6928 candidates (2024 Assets frames), 163 in sector, 57 ineligible, 19 excluded, 87 priced, 26 below the
+    floor, 61 selected.
+  - Re-running tech and banks with the new code gives identical lists, and the tech criteria values are identical.
+  - D19 is in `decisions.md`.
+- Yahoo checked live: **no history** for delisted K, THS, KLG, STKL, OLPX.
+- **Plan 026 written** (`plans/026-staples-backtest.md`) and dispatched. It covers:
+  - a `sector` setting (tech/staples);
+  - numeric labels "Company 001.." for all real data;
+  - a delisted-aware `window_return`;
+  - `--sector` in `scripts/backtest.py`;
+  - the pre-registration text added to `data.md` as its **first commit**.
+- Power at n = 61 (seeded simulation, 2000 trials): 12% / 32% / 60% for rho 0.1 / 0.2 / 0.3.
 
-   Why: Molson Coors gets a zero share count from 2010. Tyson and Constellation (two share classes) have no
-   usable share count in companyfacts at all. The frozen tech and bank top-15 lists were checked and are not
-   affected: every company the bug hits there is far below #15 (largest is Shopify at about $124bn vs #15 at
-   $164bn).
-8. **Survivorship fix.** Build candidates from companies that filed for 2024, not from today's ticker list. The
-   ticker file only lists currently traded tickers. The SEC frames `us-gaap/Assets/USD/CY2024Q1I..Q4I` give every
-   filer.
-   - Found: Kellanova (about $28bn), TreeHouse (about $2–3bn) and WK Kellogg (about $1.7bn) were listed on
-     2025-03-31 but have been delisted since. SunOpta and Olaplex are borderline around $1bn.
-   - Rule: include a delisted company if a price history exists. Its return runs to the last trading day, with zero
-     return on the cash after. Otherwise list it as excluded, with the reason.
-   - Guard against reused tickers ("K").
-9. **Test fixed before the run** (pre-registration), unchanged from tech:
-   - primary: CRITIC weights, TOPSIS score vs total return, Kendall tau, two-sided;
-   - secondary: Spearman;
-   - sensitivity: entropy and equal weights.
+## Next
 
-   Power at n ≈ 55: about 31% for rho = 0.2 and about 61% for rho = 0.3. Say so in the write-up.
+1. Review and merge plan 026: re-run its done criteria, check the pre-registration commit comes first, read the
+   tests.
+2. **The advisor runs the real backtest** (the executor is forbidden to):
+   `cd /home/imad/maid && python scripts/backtest.py --sector staples`. If Yahoo rate-limits, wait and rerun
+   (successes are cached; test with GIS first).
+3. Write `docs/research/backtest-staples-results.md` (summary stats only, same shape as
+   `backtest-quant-only-results.md`). Report the primary CRITIC Kendall tau first, whatever it is.
+4. Update `notes/MEMO.md` (local) with the 025 outcome, the excluded list, and the backtest result (per-company
+   returns may go there; never commit them).
+5. Ask the owner before pushing.
 
-## Next: write two plans (the owner asked for a split)
-
-**Plan 025: build and freeze the staples universe. No returns are computed or looked at.**
-- `universe.py`:
-  - `SECTORS["staples"]` with the SIC ranges above;
-  - the share-count fix (decision 7);
-  - a size floor option instead of a fixed N for staples (`MIN_CAP = 1e9`).
-- `xbrl.py`: the revenue and net-income fallbacks (decision 4), plus a pure `staples_criteria(facts, date)` with ROA.
-  The instant `Assets` fact must match the 10-K accession and period end.
-- `scripts/select_universe.py`:
-  - candidates from the 2024 Assets frames, not from today's ticker list;
-  - the exchange on the decision date from the 10-K cover (`dei:SecurityExchangeName`) or from submissions;
-  - the ticker from the 10-K cover (`dei:TradingSymbol`).
-
-  Remember: `PRESCREEN = 40` and the silent `if cik not in shares: continue` both drop companies. Neither is
-  acceptable for a floor-based universe.
-- Named-company sanity list:
-  - must be in: PG, KO, PM, PEP, MO, MDLZ, CL, KHC, GIS, HSY, TSN, STZ, TAP, MNST, EL, KR, Kellanova;
-  - must be out: WMT, COST, Publix, Unilever/BAT (20-F filers).
-- Real runs need `SEC_USER_AGENT` (already in `.env`, never print it) and Yahoo for the 2025-03-31 prices.
-- Freeze to `data/universe/staples.csv`.
-- Tests: offline fixtures, as for tech.
-- Re-run `scripts/fetch_sec.py` on the 15 tech tickers to show the tech numbers are unchanged.
-
-**Plan 026: staples backtest**, after 025 is frozen and reviewed:
-- `source="sec"` gets a sector option (staples criteria, staples universe).
-- Labels: "Company A..Z" breaks above 26, so switch to "Company 001"-style labels.
-- `scripts/backtest.py` for staples, with the delisted rule.
-- Primary test as in decision 9, written into `data.md` **before** the run.
-- Update `notes/MEMO.md` with the result. Commit only summary stats (as for tech).
+Later options (not planned): LLM scores from 10-K text with memorization controls; bank criteria spike; medical
+devices as a backup sector.
 
 ## Practical warnings
 
-- **Yahoo rate limits often.** It then returns empty data for valid tickers, which looks like "no price data".
-  - Test with a live ticker (GIS) before concluding a ticker is delisted.
-  - Successes are cached; re-run later.
-  - Stooq is not usable: it blocks automated downloads.
-- Whether Yahoo still has history for delisted K / THS / KLG / STKL / OLPX was **not confirmed**: it was rate
-  limiting at the time. Check this first in plan 025 or 026. If Yahoo has no history, the delisted rule says
-  "excluded, with reason".
-- Executors' worktrees start from `main`. Tell them to `git reset --hard <integration/prototype SHA>` first. The venv
-  is in the main repo: use `PYTHONPATH=<worktree>/src`. Real runs must use `/home/imad/maid` as the working
-  directory (for the data cache).
-- The advisor's scratch scripts (coverage check, caps, survivorship count, scratch backtest) are saved locally in
-  `notes/scratch/`. They show working code for frames, the staples SIC filter, tag coverage and the delisted search.
-
-## Useful commands
-
-```bash
-source .venv/bin/activate
-pytest -q && ruff check .
-python -m maid.demo --source sec          # real tech ranking, quant only
-python scripts/backtest.py                # tech backtest (needs Yahoo)
-python notes/scratch/staples_caps.py      # staples coverage + caps estimate (local scratch)
-python notes/scratch/survivors.py         # delisted staples count (local scratch)
-```
+- Yahoo rate-limits often (it throttled for about 40 minutes on 2026-11-03). Empty data looks like "no price data".
+- Executor worktrees start from `main`: tell them to `git reset --hard <integration/prototype SHA>` first. The venv
+  is in the main repo, so use `PYTHONPATH=<worktree>/src`. Real runs use `/home/imad/maid` as the working directory.
+  Scripts that write must take an output dir (e.g. `select_universe.py --out-dir`), so they don't write into the
+  main tree.
+- Keep executor tasks small. Network-heavy real runs are better done by the advisor after review. The 025 executor
+  used about 140k tokens, mostly on waits and logs.
+- Scratch from 025's executor: `/tmp/claude-1000/plan025/` (tech before/after outputs, run logs). It's temporary.
