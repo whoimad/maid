@@ -35,6 +35,9 @@ honor its STOP conditions, and update your row when done.
 | [024](024-backtest-quant-only.md) | Backtest: TOPSIS score vs total return 2025-04-01..2026-03-31; primary CRITIC + Kendall tau, fixed before the result | P1 | S | 023 | DONE (branch `feat/backtest`, 8737330; reviewed; merged `08a58f2`; real run reproduced by the reviewer; result stays local, run `python scripts/backtest.py`) |
 | [025](025-staples-universe.md) | Staples universe: SIC ranges, $1bn floor, survivorship-safe candidates, cover-page share counts, ROA; freeze `staples.csv` (no returns) | P1 | L | 019–024 | DONE (branch `feat/staples-universe`, 434766b; reviewed after 2 revisions: plan's TAP check was wrong (owner's source order kept; WA vs cover accepted), 3 capex/OCF fallback tags added (Smithfield, Primo Brands rescued); 61 selected, 19 excluded; tech/banks re-run identical; merged 4bf145c) |
 | [026](026-staples-backtest.md) | Staples in the graph (`sector` setting, numeric labels), delisted-aware window return, pre-registered test in data.md; reviewer runs the real backtest | P1 | M | 025 | DONE (branch `feat/staples-backtest`, 25444eb; pre-registration commit 2d7e8e2 first; reviewed; merged; tech ranking unchanged, staples smoke run 61 rows) |
+| [027](027-staples-no-outcome-kvue.md) | `--no-outcome`: Kenvue ranked but left out of the correlation (no Yahoo history); dated deviation in data.md | P1 | S | 026 | DONE (branch `fix/backtest-no-outcome`, 172905b; deviation commit 9ccc26a first; reviewed; merged `99ea26d`; real run: primary Kendall tau −0.096, p = 0.28, n = 60) |
+| [028](028-staples-results-doc.md) | Backtest #2 write-up: `docs/research/backtest-staples-results.md` (summary stats only) | P1 | S | 027 | DONE (branch `docs/staples-results`, 5a2573f; reviewed: text identical to the plan; merged `b6bb576`) |
+| [029](029-tenk-text-ingest.md) | 10-K text: fetch the decision-date 10-K, extract Items 1/1A/7 (TOC- and cross-reference-safe), anonymize names and ticker; coverage script | P1 | M | 027 | IN PROGRESS (executor dispatched at `b6bb576`; reviewer runs `scripts/fetch_filings.py --sector staples` after merge) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -107,6 +110,17 @@ the delisted K, THS, KLG, STKL, OLPX (GIS worked in the same call), so under the
 Molson Coors. Plan 026 (staples backtest) is written after 025 is reviewed.
 Owner decision 2026-11-03: accept losing Kellanova (and the other delisted names without Yahoo history); keep
 one rule for everyone, no deal-price exceptions.
+
+### Batch 9 (029–032): LLM scores on the staples universe, planned 2026-11-03 at `b6bb576`
+
+Owner decisions (2026-11-03): criteria **pricing power, strategy clarity, capital allocation** (1–9, quoted
+evidence); **pilot of 10 companies** (first 10 labels, a fixed rule) at K = 5 before all 61; a **local model via
+Ollama** (OpenAI-compatible API) for development and as the older-cutoff leakage comparison, **DeepSeek** for the
+main run (extends D14; record as D20 in plan 030). Laptop GPU: RTX 2070 Max-Q, 8 GB, so 7–8B models at 4-bit;
+context size must be set explicitly and over-long text refused, never silently truncated.
+- 029 text ingest (no LLM) → 030 scorer (OpenAI-compatible client, rubrics, cache key with model + prompt version +
+  text hash, graph setting) → 031 leakage probes (recognition, date-only recall; local vs DeepSeek) → 032
+  pre-registered comparison against the quant-only baseline (n = 60). 031 and 032 are fixed before any full run.
 
 ## Findings considered and rejected
 
