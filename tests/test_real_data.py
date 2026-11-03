@@ -196,4 +196,4 @@ def test_read_aliases_real_file():
     from maid.real_data import read_aliases
 
     a = read_aliases()
-    assert a["PG"] == ["P&G", "Procter & Gamble"] and a["EL"] == ["Estée Lauder"] and len(a) == 4
+    assert a["PG"] == ["P&G", "Procter & Gamble"] and a["EL"] == ["Estée Lauder", "Lauder"] and len(a) == 16

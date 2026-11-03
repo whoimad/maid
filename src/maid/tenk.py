@@ -9,9 +9,10 @@ TITLES = {"1": r"business", "1a": r"risk\s+factors", "1b": r"unresolved", "1c": 
 EXTRACTOR_VERSION = "2"  # bump when extraction rules change (cache keys and reports carry it)
 SKIP = {"script", "style", "ix:header"}
 BLOCK = {"p", "div", "br", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6", "table", "td"}
-SUFFIXES = r"(?:inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|l\.p|n\.v|s\.a)"
+SUFFIXES = r"(?:inc|incorporated|corp|corporation|co|company|ltd|limited|plc|llc|l\.p|n\.?v|s\.?a)"
 GENERIC = {"companies", "company", "holdings", "holding", "group", "foods", "food", "brands", "international",
-           "corporation", "inc", "co", "products", "beverages", "beverage", "industries", "enterprises"}
+           "corporation", "inc", "co", "global", "products", "beverages", "beverage", "industries", "enterprises"}
+COMMON_CORES = {"post", "corn", "national", "general", "united", "american", "global", "first", "best"}
 RESIDUAL_SKIP = {"general", "national", "american", "united", "pride", "snack", "dwight", "church"}
 MDNA_HEAD = re.compile(r"^[ \t]*management[’']s\s+discussion\s+and\s+analysis\s+of\s+financial\s+condition", re.I | re.M)
 MDNA_END = re.compile(r"^[ \t]*(?:report\s+of\s+independent\s+registered|consolidated\s+statements?\s+of\s+"
@@ -120,12 +121,12 @@ def _full_variants(names: list[str]) -> list[str]:
 
 
 def _core(full: str) -> str:
-    """Full variant minus trailing generic words ("" when nothing is dropped or the result is too short)."""
+    """Full variant minus trailing generic words ("" when nothing is dropped, the result is too short or a common word)."""
     words = full.split()
     while len(words) > 1 and words[-1].lower().strip(",.") in GENERIC:
         words.pop()
     core = " ".join(words)
-    return core if core != full and len(core) >= 4 else ""
+    return core if core != full and len(core) >= 4 and core.lower() not in COMMON_CORES else ""
 
 
 def name_variants(names: list[str], aliases=()) -> list[str]:

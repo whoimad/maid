@@ -106,6 +106,17 @@ def test_name_variants_v2():
     assert "P&G" in v(["PROCTER & GAMBLE Co"], aliases=["P&G"])
 
 
+def test_common_core_stoplist_and_dotless_suffix():
+    v = name_variants
+    assert v(["Post Holdings, Inc."]) == ["Post Holdings"]
+    assert v(["CORN PRODUCTS INTERNATIONAL INC"]) == ["CORN PRODUCTS INTERNATIONAL"]
+    assert v(["NATIONAL BEVERAGE CORP"]) == ["NATIONAL BEVERAGE"]
+    assert v(["Bunge Global SA"]) == ["Bunge Global", "Bunge"]
+    assert anonymize_text("Post Holdings funds post-retirement plans.", ["Post Holdings, Inc."], "POST", "Company 045")[0] == "Company 045 funds post-retirement plans."
+    assert anonymize_text("Bunge sells grain.", ["Bunge Global SA"], "BG", "Company 004")[0] == "Company 004 sells grain."
+    assert anonymize_text("Pilgrim’s chicken", ["PILGRIMS PRIDE CORP"], "PPC", "Company 046", aliases=["Pilgrims"])[0] == "Company 046 chicken"
+
+
 @pytest.mark.parametrize("text,name", [
     ("The Clorox Company", "CLOROX CO /DE/"), ("Pilgrim’s Pride", "PILGRIMS PRIDE CORP"),
     ("Pilgrim's Pride", "PILGRIMS PRIDE CORP"), ("The J.M. Smucker Company", "J M SMUCKER CO"),
