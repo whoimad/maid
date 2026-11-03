@@ -38,7 +38,8 @@ honor its STOP conditions, and update your row when done.
 | [027](027-staples-no-outcome-kvue.md) | `--no-outcome`: Kenvue ranked but left out of the correlation (no Yahoo history); dated deviation in data.md | P1 | S | 026 | DONE (branch `fix/backtest-no-outcome`, 172905b; deviation commit 9ccc26a first; reviewed; merged `99ea26d`; real run: primary Kendall tau −0.096, p = 0.28, n = 60) |
 | [028](028-staples-results-doc.md) | Backtest #2 write-up: `docs/research/backtest-staples-results.md` (summary stats only) | P1 | S | 027 | DONE (branch `docs/staples-results`, 5a2573f; reviewed: text identical to the plan; merged `b6bb576`) |
 | [029](029-tenk-text-ingest.md) | 10-K text: fetch the decision-date 10-K, extract Items 1/1A/7 (TOC- and cross-reference-safe), anonymize names and ticker; coverage script | P1 | M | 027 | DONE (branch `feat/tenk-text`, c67e016; reviewed after 1 revision: hyphenated names ("Coca-Cola"); merged `20a063a`; real fetch: 60 ok, CLX short (MD&A by reference), 10 companies weakly anonymized → plan 030) |
-| [030](030-tenk-text-v2.md) | Text v2: "Item 1.A." headings, MD&A by reference (exhibit), anonymization v2 (state tags, &, accents, apostrophes, initials, core names, alias list), per-criterion slices with a 24k-token budget | P1 | M | 029 | IN PROGRESS (executor dispatched at `20a063a`; reviewer re-runs `fetch_filings.py --sector staples` after merge) |
+| [030](030-tenk-text-v2.md) | Text v2: "Item 1.A." headings, MD&A by reference (exhibit), anonymization v2 (state tags, &, accents, apostrophes, initials, core names, alias list), per-criterion slices with a 24k-token budget | P1 | M | 029 | DONE (branch `feat/tenk-text-v2`, 030c82d + bc8ccc5; reviewed after 1 revision: common-word cores (Post, Corn, National), dotless SA (Bunge ×193), 15 aliases; merged `e185bcd`; real fetch: 61 ok, CLX exhibit MD&A, 3 no split, 3 truncated, distinctive leftovers 0) |
+| [031](031-llm-scorer.md) | LLM scorer: `LLM_*` settings, rubrics (`PROMPT_VERSION`), `LLMScorer` (K cached samples, normalized quote check, retries, truncation guard), pilot script, D20 | P1 | M | 030 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -119,7 +120,7 @@ evidence); **pilot of 10 companies** (first 10 labels, a fixed rule) at K = 5 be
 Ollama** (OpenAI-compatible API) for development and as the older-cutoff leakage comparison, **DeepSeek** for the
 main run (extends D14; record as D20 in plan 030). Laptop GPU: RTX 2070 Max-Q, 8 GB, so 7–8B models at 4-bit;
 context size must be set explicitly and over-long text refused, never silently truncated.
-- 029 text ingest (no LLM) → 030 text v2 (fixes from the real fetch) → 031 scorer (OpenAI-compatible client,
+- Renumbered 2026-11-03: 029 text ingest (no LLM) → 030 text v2 (fixes from the real fetch) → 031 scorer + pilot script (graph not wired) → 032 graph wiring (`scorer` setting, `source="sec"` qualitative path, `quote_in_text` in the review check) → 033 leakage probes → 034 pre-registered comparison. Original sketch: 031 scorer (OpenAI-compatible client,
   rubrics, cache key with model + prompt version + extractor version + text hash, graph setting, truncation guard via
   reported prompt tokens) → 032 leakage probes (recognition, date-only recall; local vs DeepSeek) → 033
   pre-registered comparison against the quant-only baseline (n = 60). 032 and 033 are fixed before any full run.

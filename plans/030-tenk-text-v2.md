@@ -310,3 +310,93 @@ Full tests pass, ruff clean, commit(s).
 - `criterion_text` defines what the scorer (next plan) sees. Changing the budget or the split changes every score:
   bump `EXTRACTOR_VERSION` and include it in the scorer's cache key.
 - Brand names that are not the company name (Tide, Sprite) remain; the leakage probes measure recognition.
+
+## Revision 1 (2026-11-03, reviewer, after the real fetch at `030c82d`)
+
+The real run (`fetch_filings.py --sector staples` on branch `feat/tenk-text-v2` at `030c82d`) passed the coverage checks: 61 ok, CLX
+MD&A from `exhibit:clx-20240630_d2.htm`, 3 without split, 3 truncated. Anonymization had three problems. Fix them on top of
+`030c82d`, on the same branch name `feat/tenk-text-v2`, and change only these files: `src/maid/tenk.py`, `tests/test_tenk.py`,
+`data/universe/aliases.csv`, `docs/architecture/data.md`.
+
+**R1. Core variants that are common English words.** The real run made `Post` (Post Holdings), `CORN` (former name
+Corn Products International) and `NATIONAL` (National Beverage) into core variants, so "post-retirement", "corn" and
+"national" were replaced by the label. A length rule cannot catch `NATIONAL`, so use a stop-list. In `src/maid/tenk.py`,
+add this constant next to `GENERIC`:
+
+```python
+COMMON_CORES = {"post", "corn", "national", "general", "united", "american", "global", "first", "best"}
+```
+
+Then in `_core`, return `""` when `core.lower() in COMMON_CORES`. The current function is:
+
+```python
+def _core(full: str) -> str:
+    """Full variant minus trailing generic words ("" when nothing is dropped or the result is too short)."""
+    words = full.split()
+    while len(words) > 1 and words[-1].lower().strip(",.") in GENERIC:
+        words.pop()
+    core = " ".join(words)
+    return core if core != full and len(core) >= 4 else ""
+```
+
+Change only the final `return` line to:
+`return core if core != full and len(core) >= 4 and core.lower() not in COMMON_CORES else ""`. Also update the
+docstring to `("" when nothing is dropped, the result is too short or a common word)`.
+
+**R2. Dotless `SA` / `NV` suffixes, and "Global".** `Bunge Global SA` kept `SA`, so no core variant was made and "Bunge"
+was left 193 times. In `SUFFIXES`, replace `n\.v|s\.a` with `n\.?v|s\.?a` (nothing else in that regex changes). Add
+`"global"` to `GENERIC`. The variants for `Bunge Global SA` then become `["Bunge Global", "Bunge"]`.
+
+**R3. Aliases for distinctive leftovers** (a data change, as the maintenance note allows). Append these rows to
+`data/universe/aliases.csv`, in this order, after the existing five:
+
+```
+SFM,Sprouts
+KDP,Keurig
+PPC,Pilgrims
+CL,Colgate
+IMKTA,Ingles
+EL,Lauder
+EPC,Edgewell
+WMK,Weis
+TAP,Coors
+TAP,Molson
+CPB,Campbell
+KHC,Kraft
+KHC,Heinz
+TR,Tootsie
+MNST,Hansen
+```
+
+(`Pilgrims` without an apostrophe on purpose: the matcher already lets a final `s` take an optional `'` or `’`.)
+Deliberately **not** aliased: COKE's "Coca-Cola" (it names the franchisor, The Coca-Cola Company, which is a different
+entity; replacing it would merge the two) and BF-B's "Brown" (a family name and a common word). Both stay as known
+recognition cues for the leakage probes.
+
+**Tests (add to `tests/test_tenk.py`, in the style of `test_name_variants_v2`; do not change existing assertions):**
+- `name_variants(["Post Holdings, Inc."]) == ["Post Holdings"]`
+- `name_variants(["CORN PRODUCTS INTERNATIONAL INC"]) == ["CORN PRODUCTS INTERNATIONAL"]`
+- `name_variants(["NATIONAL BEVERAGE CORP"]) == ["NATIONAL BEVERAGE"]`
+- `name_variants(["Bunge Global SA"]) == ["Bunge Global", "Bunge"]`
+- `anonymize_text("Post Holdings funds post-retirement plans.", ["Post Holdings, Inc."], "POST", "Company 045")[0] == "Company 045 funds post-retirement plans."`
+- `anonymize_text("Bunge sells grain.", ["Bunge Global SA"], "BG", "Company 004")[0] == "Company 004 sells grain."`
+- an alias with the apostrophe rule: `anonymize_text("Pilgrim’s chicken", ["PILGRIMS PRIDE CORP"], "PPC", "Company 046", aliases=["Pilgrims"])[0] == "Company 046 chicken"`
+
+**Docs:** in `docs/architecture/data.md`, replace the aliases bullet (currently it says "five rows: P&G, Procter & Gamble,
+Smucker, Estée Lauder, Coca-Cola") so it says there are 20 rows: the five short forms plus 15 distinctive single words
+found by the residual count on the real fetch (2026-11-03). Name COKE's "Coca-Cola" and BF-B's "Brown" as deliberately
+not aliased, with the reason above. Add one sentence: core variants that are common words (`COMMON_CORES`) are never
+used, because they would replace ordinary text.
+
+**Done criteria (revision):**
+- `pytest -q` all pass (at least 7 more tests than at `030c82d`: 182 passed then); `ruff check .` clean.
+- `grep -c . data/universe/aliases.csv` → `21`.
+- `git diff --stat 030c82d..HEAD` lists only the four files above.
+- Do not run `fetch_filings.py` (network); the reviewer re-runs it.
+
+**STOP** if any existing test fails after R1/R2 for a reason other than an expected-variant list that now legitimately
+contains a new entry. Report it; do not edit the old assertion.
+
+**Revision 1 amendment (reviewer):** `tests/test_real_data.py::test_read_aliases_real_file` pins the old alias file.
+It is in scope for this revision: change its assertion to
+`a["PG"] == ["P&G", "Procter & Gamble"] and a["EL"] == ["Estée Lauder", "Lauder"] and len(a) == 16`.
