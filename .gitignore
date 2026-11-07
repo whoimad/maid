@@ -3,5 +3,7 @@ __pycache__/
 *.egg-info/
 .env
 .pytest_cache/
-data/cache/
+# real data stays local; only the frozen universe lists are committed
+data/*
+!data/universe/
 .claude/worktrees/

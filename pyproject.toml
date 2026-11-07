@@ -18,6 +18,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
+gui = ["streamlit>=1.39"]
+data = ["yfinance>=0.2.40"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,5 +1,7 @@
 # Model knowledge cutoff research (issue #2, SCOPE.md section 3)
 
+> Superseded 2026-11-03: MAID uses local models only (decision D21). This note is kept as research history.
+
 Researched 2026-11-02. Decision date to beat: 2024-12-31. Anything without a URL or marked UNVERIFIED is not established.
 
 ## 1. Current DeepSeek API models

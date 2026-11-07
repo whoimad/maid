@@ -14,6 +14,34 @@ honor its STOP conditions, and update your row when done.
 | [003](003-entropy-normalization-variant.md) | Entropy: add textbook sum-normalized variant, rerun spike #6, correct docs | P1 | M | 001 (soft) | DONE (branch `fix/entropy-variant`, a3f9133; reviewed, not merged; default variant still undecided) |
 | [004](004-mcdm-input-validation-and-review-overrides.md) | MCDM input validation; human-review override schema; checkpoint type allowlist | P2 | S | 003 | DONE (reviewed; spike output unchanged, strict checkpoint mode verified) |
 | [005](005-robustness-rank-intervals.md) | Robustness: rank intervals via bootstrap + Dirichlet weight perturbation | P2 | M | 004 (soft) | DONE (reviewed; 37 tests pass with 004 merged; library only, not wired into the graph) |
+| [006](006-overview-accuracy-and-c4.md) | Overview: built-vs-planned status, fix false claims, C4 context/container diagrams, doc link test | P1 | S | PR #13 | DONE (branch `docs/overview-status`, 60bf819; reviewed after 1 revision: Mermaid label quoting; not merged) |
+| [007](007-langgraph-block-doc.md) | LangGraph block doc (state, nodes, interrupt/resume, target `Send` fan-out) with code-checked diagram | P1 | M | 006 | DONE (branch `docs/graph-block`, 1be8488; reviewed; merged into `integration/prototype`) |
+| [008](008-uncertainty-doc.md) | Uncertainty budget: every noise source, how measured, what is built | P1 | M | PR #13, 006 | DONE (branch `docs/uncertainty`, bb04a9d; reviewed; merged into `integration/prototype`) |
+| [009](009-decisions-d8-d15.md) | decisions.md D8–D15: rankers, scale, benefit-only, normalization, Kendall tau, perturbation, model, no ML | P1 | M | PR #13, 006 | DONE (branch `docs/decisions-d8-d15`, e07e028; reviewed; merged into `integration/prototype`) |
+| [010](010-interview-sheet.md) | Interview sheet: pitch, 11 sourced Q&As, what I'd change, glossary | P2 | S | 006–009, 013 | DONE (branch `docs/final-consistency-and-interview`, e675174 + a5cd381; reviewed after 1 revision) |
+| [011](011-demo-pipeline-end-to-end.md) | Working prototype: `python -m maid.demo` runs the full graph on synthetic data with a stub scorer | P1 | L | 007 | DONE (branch `feat/demo-pipeline`, c1817eb; reviewed after 1 amendment: legacy graph tests now pass 2 companies, since real MCDM needs n >= 2) |
+| [012](012-streamlit-gui.md) | Streamlit GUI: pipeline, inputs, scores + overrides, weights, ranking, rank intervals | P1 | M | 011 | DONE (branch `feat/gui`, d7f6273; reviewed after 1 revision: integer rank axes, grouped weights chart, override UI test; all 7 tabs checked in headless Firefox) |
+| [013](013-walkthrough.md) | Walkthrough: guided tour of what to run, read and open | P1 | S | 007–009, 011, 012 | DONE (branch `docs/walkthrough`, c551cea; reviewed; merged onto f15b885 with peer session's 014/015) |
+| [014](014-settings-validation-and-evidence-check.md) | Validate settings at ingest (fail before review); evidence check raises instead of `assert` | P1 | S | 011 | DONE (branch `fix/settings-validation`, 2918d86; reviewed; merged into `integration/prototype`) |
+| [015](015-docs-status-after-demo.md) | overview.md + uncertainty.md: mark the parts plan 011 built (stub scorer, substring check, overrides, Kendall tau) | P1 | S | 011 | DONE (branch `docs/status-after-demo`, 8aeb36f; reviewed; also fixed overview.md:151 graph.md blurb; merged into `integration/prototype`) |
+| [016](016-doc-consistency-after-demo.md) | Docs consistent with the demo: robustness wired, overrides applied, full state keys, CLAUDE.md layout | P1 | S | 011–015 | DONE (same branch, c45ea81; reviewed) |
+| [017](017-score-noise-rank-intervals.md) | LLM score noise as a third rank interval (`score_noise`): engine, graph, report, GUI, docs, D16 | P1 | M | 005, 011, 012 | DONE (branch `feat/score-noise-intervals`, 57de3ee; reviewed after 1 revision: INTERVIEW Q7 wording; widths match the scratch prototype: 0 at k=1, mean 1.6 at k=5) |
+| [018](018-real-data-spec-and-decision-date.md) | Real-data spec (`data.md`, D17); decision date 2025-03-31; `.gitignore` keeps data local | P1 | M | — | DONE (branch `docs/real-data-spec`, 383ad20; reviewed after 1 revision: D14 and overview stale dates; merged into `integration/prototype`) |
+| [019](019-sec-xbrl-quant-ingest.md) | SEC client + point-in-time XBRL tech criteria (cached, offline-tested) | P1 | M | 018 | DONE (branch `feat/sec-xbrl-ingest`, a110caf; reviewed; merged into `integration/prototype`; Step 6 real run NOT done: no `SEC_USER_AGENT`) |
+| [020](020-universe-and-prices.md) | yfinance price layer; select and freeze 15-name tech and bank universes | P1 | L | 018, 019 | DONE (code; branch `feat/universe-prices`, 72e067e; reviewed; merged into `integration/prototype`). Selection NOT run: needs `SEC_USER_AGENT` in the owner's `.env`; the CSVs come from the owner's first run |
+| [021](021-parallel-sec-downloads.md) | Parallel SEC downloads (8 workers, shared 8 req/s cap) + retry on transient errors | P1 | S | 020 | DONE (branch `perf/parallel-sec`, befb30c; reviewed; merged) |
+| [022](022-universe-share-fallbacks-and-price-retry.md) | Fix universe: share-count fallbacks (Alphabet/Meta missing), Yahoo retries (NVIDIA dropped), Adobe R&D tag | P1 | S | 021 | DONE (branch `fix/universe-shares`, d7ae7b3; reviewed; merged; real runs: tech and banks pass sanity checks, CSVs committed) |
+| [023](023-real-data-quant-only-graph.md) | Graph runs on real SEC data: `source="sec"`, frozen tech universe, labels Company A..O, quant only, no LLM | P1 | M | 019–022, D18 | DONE (branch `feat/real-data-graph`, 65d9146; reviewed; merged; real run: 15 OK, CRITIC top 5 NVDA, META, AVGO, NOW, QCOM; weights sum 1) |
+| [024](024-backtest-quant-only.md) | Backtest: TOPSIS score vs total return 2025-04-01..2026-03-31; primary CRITIC + Kendall tau, fixed before the result | P1 | S | 023 | DONE (branch `feat/backtest`, 8737330; reviewed; merged `08a58f2`; real run reproduced by the reviewer; result stays local, run `python scripts/backtest.py`) |
+| [025](025-staples-universe.md) | Staples universe: SIC ranges, $1bn floor, survivorship-safe candidates, cover-page share counts, ROA; freeze `staples.csv` (no returns) | P1 | L | 019–024 | DONE (branch `feat/staples-universe`, 434766b; reviewed after 2 revisions: plan's TAP check was wrong (owner's source order kept; WA vs cover accepted), 3 capex/OCF fallback tags added (Smithfield, Primo Brands rescued); 61 selected, 19 excluded; tech/banks re-run identical; merged 4bf145c) |
+| [026](026-staples-backtest.md) | Staples in the graph (`sector` setting, numeric labels), delisted-aware window return, pre-registered test in data.md; reviewer runs the real backtest | P1 | M | 025 | DONE (branch `feat/staples-backtest`, 25444eb; pre-registration commit 2d7e8e2 first; reviewed; merged; tech ranking unchanged, staples smoke run 61 rows) |
+| [027](027-staples-no-outcome-kvue.md) | `--no-outcome`: Kenvue ranked but left out of the correlation (no Yahoo history); dated deviation in data.md | P1 | S | 026 | DONE (branch `fix/backtest-no-outcome`, 172905b; deviation commit 9ccc26a first; reviewed; merged `99ea26d`; real run: primary Kendall tau −0.096, p = 0.28, n = 60) |
+| [028](028-staples-results-doc.md) | Backtest #2 write-up: `docs/research/backtest-staples-results.md` (summary stats only) | P1 | S | 027 | DONE (branch `docs/staples-results`, 5a2573f; reviewed: text identical to the plan; merged `b6bb576`) |
+| [029](029-tenk-text-ingest.md) | 10-K text: fetch the decision-date 10-K, extract Items 1/1A/7 (TOC- and cross-reference-safe), anonymize names and ticker; coverage script | P1 | M | 027 | DONE (branch `feat/tenk-text`, c67e016; reviewed after 1 revision: hyphenated names ("Coca-Cola"); merged `20a063a`; real fetch: 60 ok, CLX short (MD&A by reference), 10 companies weakly anonymized → plan 030) |
+| [030](030-tenk-text-v2.md) | Text v2: "Item 1.A." headings, MD&A by reference (exhibit), anonymization v2 (state tags, &, accents, apostrophes, initials, core names, alias list), per-criterion slices with a 24k-token budget | P1 | M | 029 | DONE (branch `feat/tenk-text-v2`, 030c82d + bc8ccc5; reviewed after 1 revision: common-word cores (Post, Corn, National), dotless SA (Bunge ×193), 15 aliases; merged `e185bcd`; real fetch: 61 ok, CLX exhibit MD&A, 3 no split, 3 truncated, distinctive leftovers 0) |
+| [031](031-llm-scorer.md) | LLM scorer: `LLM_*` settings, rubrics (`PROMPT_VERSION`), `LLMScorer` (K cached samples, normalized quote check, retries, truncation guard), pilot script, D20 | P1 | M | 030 | DONE (branch `feat/llm-scorer`, f1aa033 + bb6b905; reviewed after 1 fix: pilot valid count for failed cells; merged `9110535`; pilot NOT run: needs a 32k-context Ollama model or a DeepSeek key) |
+| [032](032-local-only-sequential-agents.md) | Local models only, agents as sequential jobs (D21; supersedes D14/D20); `make_client` refuses non-local servers; prompt v2 (single-sentence quote ≤ 400 chars); limitation stated across docs, INTERVIEW Q12 | P1 | M | 031 | DONE (branch `feat/local-only`, 0f285a2; reviewed; merged `65bd00b`) |
+| [033](033-sequential-llm-agents-in-graph.md) | Three LLM criterion agents (pricing power → strategy clarity → capital allocation) as sequential, cache-resumable graph nodes; `scorer="llm"`, `limit`; report "Agents" table | P1 | M | 032 | DONE (branch `feat/sequential-agents`, 61489bf; reviewed; merged `033b064`; 7 new tests instead of 10, all plan items covered; demo output identical) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -26,7 +54,95 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - Plan 003 deliberately does **not** change the entropy default. Choosing min-max vs sum is a maintainer decision to
   make after reading the rerun spike results (record it as a sub-decision under D4).
 
+### Batch 2 (006–010): explain-the-project docs, planned 2026-11-02 at `258af88` (`main`)
+
+Focus requested by the owner: the project is mainly for learning and for explaining in interviews, so this batch is
+docs only (architecture diagrams, decisions with trade-offs, the noise argument); no source changes.
+- Merge PR #13 first: 006, 008 and 009 reference `docs/architecture/robustness.md`.
+- 006 first: it creates `tests/test_docs.py` (relative-link check) that 007–010 rely on, and owns the overview body.
+  007 and 008 each add one line to the overview's Blocks list only.
+- 007, 008, 009 are independent of each other after 006.
+- 010 last: it only summarizes 006–009 and must add no new claims.
+- The C4 diagrams were folded into 006 (same file as the overview fixes) rather than a separate plan.
+
+### Batch 3 (011–013): prototype, GUI, walkthrough (2026-11-02)
+
+Owner asked to iterate autonomously to a working prototype + GUI + walkthrough. GitHub merges need the owner
+(auto-mode blocks agent merges), so reviewed work is stacked on the local branch `integration/prototype`; open one
+PR from it at the end. Order: 011 → 012 → 013 → 010 (interview sheet last, so it can mention the demo and GUI).
+
+### Batch 4 (014–015): audit of the plan-011 code (2026-11-02, at `73d9bb1`)
+
+Audit of `graph.py`, `demo.py`, `scoring.py`, `matrix.py`, `demo_data.py` after the demo pipeline landed. 48 tests pass,
+ruff clean. Order: 014, 015 and 012 in parallel (disjoint files), then 013, then 010.
+
+### Batch 5 (017): score noise into rank intervals (2026-11-02, at `c31034f`)
+
+Owner asked to plan the "propagate score noise" direction item and keep going until the project is done. Design
+decided in the plan (recorded as D16): bootstrap the median of each cell's K samples, recompute weights per draw,
+hold human overrides fixed, report as a separate third source drawn after bootstrap/Dirichlet so their results stay
+bit-identical. Rejected: one sample per cell (overstates the noise of a median of K); normal around the median
+(assumes a shape, needs rounding/clipping). Scratch prototype: mean interval width 0 at k=1, 1.6 at k=5.
+
+### Batch 6 (018–020): real data (2026-11-02, at `66b0316`)
+
+Owner asked whether real data can start now. Verdict: yes for ingest. The engine, robustness and cache don't care
+where numbers come from; the LLM scorer is still a stub and the real DeepSeek scorer comes after 10-K text work.
+Owner decisions: decision date moved to **2025-03-31** (on 2024-12-31 December year-end companies had not filed their
+FY2024 10-K; evaluation window becomes 2025-04-01 to 2026-03-31); **15 companies per sector**; fiscal year ends derived
+from data, never hard-coded; downloaded data stays local (gitignored), only `data/universe/*.csv` is committed.
+Order: 018 → 019 → 020 (strict). Not yet planned: wiring `source="sec"` into `ingest()` with anonymized labels;
+backtest; bank criteria spike (CET1/NPL not reliably in us-gaap XBRL); 10-K text extraction + anonymization +
+whitespace-normalized evidence check; real DeepSeek scorer.
+Assumption to confirm with the owner: sectors by SIC code (puts Alphabet/Meta in tech, not Amazon/Visa; GS/MS not banks).
+
+### Batch 7 (023): real data into the graph (2026-11-02, at `1bb3b67`)
+
+Owner asked to keep things "as simple as possible". IBM has no `OperatingIncomeLoss`, so `operating_margin` became
+`net_margin` for everyone (D18, commit `42c3383`). Plan 023 wires the frozen tech universe into `ingest()` behind
+`settings["source"]`, quantitative only. That is also the SCOPE §6 quant-only baseline. The advisor checked it in a
+scratch run on cached data: all 15 rows, three weighting schemes, `cell_samples={}` gives zero-width score-noise.
+Design choices: labels in alphabetical ticker order (so "Company A" does not mean largest); `human_review` skips the
+interrupt when there are no LLM scores; the label -> ticker map lives only in state key `tickers`; the GUI stays on
+demo data. Next, not yet planned: backtest; 10-K text; DeepSeek scorer; bank criteria spike.
+
+### Batch 8 (025): staples universe (2026-11-03, at `5b3b5e7`)
+
+From `plans/HANDOFF.md` (owner decisions 1–9 of 2026-11-02). Advisor checks before planning: Yahoo has no history for
+the delisted K, THS, KLG, STKL, OLPX (GIS worked in the same call), so under the decided rule they end up in
+`staples_excluded.csv`; the 10-K instance `_htm.xml` gives the cover share counts for Tyson, Constellation and
+Molson Coors. Plan 026 (staples backtest) is written after 025 is reviewed.
+Owner decision 2026-11-03: accept losing Kellanova (and the other delisted names without Yahoo history); keep
+one rule for everyone, no deal-price exceptions.
+
+### Batch 9 (029–032): LLM scores on the staples universe, planned 2026-11-03 at `b6bb576`
+
+Owner decisions (2026-11-03): criteria **pricing power, strategy clarity, capital allocation** (1–9, quoted
+evidence); **pilot of 10 companies** (first 10 labels, a fixed rule) at K = 5 before all 61; a **local model via
+Ollama** (OpenAI-compatible API) for development and as the older-cutoff leakage comparison, **DeepSeek** for the
+main run (extends D14; record as D20 in plan 030). Laptop GPU: RTX 2070 Max-Q, 8 GB, so 7–8B models at 4-bit;
+context size must be set explicitly and over-long text refused, never silently truncated.
+- Renumbered 2026-11-03: 029 text ingest (no LLM) → 030 text v2 (fixes from the real fetch) → 031 scorer + pilot script (graph not wired) → 032 graph wiring (`scorer` setting, `source="sec"` qualitative path, `quote_in_text` in the review check) → 033 leakage probes → 034 pre-registered comparison. Original sketch: 031 scorer (OpenAI-compatible client,
+  rubrics, cache key with model + prompt version + extractor version + text hash, graph setting, truncation guard via
+  reported prompt tokens) → 032 leakage probes (recognition, date-only recall; local vs DeepSeek) → 033
+  pre-registered comparison against the quant-only baseline (n = 60). 032 and 033 are fixed before any full run.
+- Ollama facts (checked in its docs, 2026-11-03): default context 4k tokens below 24 GiB VRAM; the OpenAI-compatible
+  API cannot set the context size (use `OLLAMA_CONTEXT_LENGTH` or a Modelfile `PARAMETER num_ctx`); `ollama ps`
+  shows the allocated context; `response_format` and `seed` are supported.
+- Real fetch (2026-11-03): median MD&A ~15.5k tokens, max ~64k (PEP); KO's `www.coca-colacompany.com` URL survives
+  anonymization (a recognition cue for 032).
+
+### Batch 10 (032–033): local models only (2026-11-03)
+
+Owner decision: no paid API ever; one local model (Ollama `qwen2.5-32k`) fills the 8 GB GPU, so agents are conceptually
+multi-agent but run as sequential jobs (D21). Qwen2.5 released 2024-09-19 (GitHub README), before the decision date.
+Smoke test: ~10–20 s per call; 4/6 attempts failed the 300-char quote rule → prompt v2. Next: pilot review, then
+recognition probe and the pre-registered comparison (renumber as 034/035).
+
 ## Findings considered and rejected
+
+- Stub scorer evidence can come from a different band than the aggregated score (latent 3 -> median 4): demo realism only; the human checkpoint is where that mismatch gets caught.
+- `kendall_tau` returns NaN when one score vector is constant: cannot happen on the demo data; revisit with real data.
 
 - `scipy` declared as a runtime dependency though only the spike script uses it: plan 005 uses `scipy.stats.rankdata` at runtime, so keep it.
 - Min-max normalization makes weights/ranks depend on which companies are in the sample: already documented in
@@ -40,9 +156,14 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 - Cost-type criteria + a second ranker family (VIKOR / PROMETHEE II), listed as "not implemented yet" in `docs/architecture/mcdm.md`.
 - SEC EDGAR XBRL ingest for quantitative criteria. Blocked on issue #3 (tech criteria list); SEC requires a declared User-Agent, which needs a new config variable.
+- Worked numeric example (4 companies x 3 criteria through CRITIC -> TOPSIS -> rank intervals, script + pinned test): good for learning the maths; not selected in batch 2.
+- Build the LangGraph fan-out for real (`Send` per company x criterion, reducer, SQLite checkpointer) with stub scorers, so plan 007's "target design" becomes the current graph. No API cost.
 - Pin the dated DeepSeek model version and log it per run (`docs/research/model-cutoff.md` recommendation 2; the alias was re-pointed on 2026-10-17).
 
+
 ## Not audited
+
+Batch 2 audited docs against `graph.py`/`state.py` only; code correctness, security and dependencies were not re-audited.
 
 Desk-research claims in `docs/research/` (they are marked as abstract-only; verifying them is SCOPE §9's job); the
 external services themselves (DeepSeek, SEC, yfinance); `pip-audit` was not run (no audit tool installed, and installing one would mutate the venv).

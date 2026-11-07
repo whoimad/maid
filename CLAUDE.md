@@ -13,10 +13,29 @@ python scripts/weight_stability.py # spike #6 simulation
 ```
 
 ## Layout
-- `src/maid/graph.py`: LangGraph pipeline skeleton (stub nodes, human-review interrupt)
+- `src/maid/graph.py`: LangGraph pipeline: demo run end to end (synthetic data, stub scorer, human-review interrupt)
+- `src/maid/demo.py`: runnable demo (`python -m maid.demo`)
+- `src/maid/demo_data.py`: synthetic demo dataset
+- `src/maid/scoring.py`: stub scorer, evidence check
+- `src/maid/llm.py`: LLM scorer (OpenAI-compatible, cached K samples, quote check, truncation guard)
+- `src/maid/rubrics.py`: scoring prompts and rubrics (PROMPT_VERSION)
+- `src/maid/matrix.py`: overrides -> decision matrix
+- `src/maid/gui_data.py`: pure GUI data helpers
+- `app/streamlit_app.py`: Streamlit GUI
 - `src/maid/state.py`: shared state and score schema
 - `src/maid/cache.py`: on-disk cache for API/data calls
 - `src/maid/config.py`: settings from environment
+- `src/maid/xbrl.py`: point-in-time XBRL extraction (pure)
+- `src/maid/sec.py`: cached SEC EDGAR client
+- `src/maid/tenk.py`: 10-K HTML -> Items 1/1A/7 text, anonymization (pure)
+- `src/maid/universe.py`: universe selection rule (pure)
+- `src/maid/prices.py`: yfinance price layer (cached, local only)
+- `src/maid/real_data.py`: frozen universe (tech or staples) -> anonymized labels -> SEC criteria for the graph
+- `src/maid/backtest.py`: rank vs total return (Kendall/Spearman), quant-only baseline
+- `scripts/backtest.py`: run the backtest on a real universe (--sector tech|staples; prints only)
+- `scripts/fetch_filings.py`: fetch and check 10-K text coverage for a universe (prints only)
+- `scripts/score_pilot.py`: score the first N companies with the LLM scorer; writes a local review table
+- `scripts/select_universe.py`: select the tech/bank top 15 or the staples floor universe
 - `src/maid/mcdm/`: MCDM engine: weights (entropy, CRITIC, equal) and ranking (TOPSIS, SAW)
 - `scripts/weight_stability.py`: spike #6 simulation (see `docs/research/weight-stability-results.md`)
 - `docs/architecture/`: architecture overview, per-block docs, design decisions
@@ -24,8 +43,11 @@ python scripts/weight_stability.py # spike #6 simulation
 ## Rules (non-negotiable)
 - **LLMs never rank.** Agents extract and score; a deterministic MCDM engine computes weights and
   ranks. Every LLM score carries cited evidence and is reviewable by the human. (SCOPE section 2)
-- Decision date is 2024-12-31: agents see only information available on or before it. Company names
+- **Local models only (D21).** No paid API. One local model (Ollama) fills the GPU, so agents run as sequential
+  jobs, never in parallel; the scorer refuses non-local servers.
+- Decision date is 2025-03-31 (D17): agents see only information available on or before it. Company names
   are anonymized ("Company A", ...) in scoring prompts. (SCOPE section 3)
+- Downloaded/derived real data (SEC, yfinance) stays local: only `data/universe/*.csv` is committed.
 - The MCDM engine (`src/maid/mcdm/`) is pure functions: no LLM, no I/O, everything unit tested.
   All criteria must be benefit-type (higher is better).
 - Cache everything on disk (D7); cache keys must include model and prompt version.
@@ -45,5 +67,6 @@ python scripts/weight_stability.py # spike #6 simulation
 ## Docs to read before changing X
 - `docs/architecture/decisions.md` (D1-D7) before changing any design.
 - `docs/architecture/mcdm.md` before touching `src/maid/mcdm/`.
+- `docs/architecture/data.md` before touching ingest, XBRL or prices.
 - `docs/research/README.md`: research notes were made from abstracts only; check claims marked
   UNVERIFIED before relying on them.
