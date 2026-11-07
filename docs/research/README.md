@@ -14,3 +14,4 @@ Results of our own runs (not desk research):
 - `weight-stability-results.md`: spike #6, entropy vs CRITIC weight stability (synthetic)
 - `backtest-quant-only-results.md`: backtest #1, quant-only ranking vs 12-month return: null result, power analysis, next options
 - `backtest-staples-results.md`: backtest #2, 60 consumer-staples companies, pre-registered: null result (primary Kendall tau −0.10, p = 0.28)
+- `try1-postmortem.md`: why try #1 (predicting next-year returns) failed, what to keep, and the risk-based direction for try #2
